@@ -30,8 +30,9 @@ Four scripts are ran in order as part of the experiment:
     reports accuracy per class along with ids which were incorrectly predicted over course of 25 runs
 
     these variables may be overridden by setting them in config.txt:
-
-        refine_hg_based_on_strs_gd_cutoff=12
+          
+        iterations=25 #number of model runs to execute for calculating average accuracy
+        refine_hg_based_on_strs_gd_cutoff=12 #Genetic distance cutoff used to increase SNP resolution of samples with closest matches
         model=ab #any combination of a,b,c,d - each corresponds to a set of STRs
 
         a = ["DYS391","DYS389I","DYS437","DYS439","DYS389II","DYS438","DYS426","DYS393","YCAII","DYS390","DYS385","Y-GATA-H4","DYS388","DYS447","DYS19","DYS392"]
