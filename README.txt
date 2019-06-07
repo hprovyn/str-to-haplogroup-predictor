@@ -1,6 +1,10 @@
+STR TO HAPLOGROUP PREDICTOR
+
+This project is financially supported by YSEQ and is the work of Hunter Provyn with some ideas contributed by Thomas Krahn.
+
 WHAT IT DOES
 
-Processes sample STR and SNP results along with a SNP phylogenetic tree to run an experiment that predicts SNP branch from a set of STRs absent any SNP info.
+Processes sample STR and SNP results along with a SNP phylogenetic tree to run an experiment that predicts SNP branch from a set of STRs absent any SNP info. 
 
 REQUIREMENTS
 
