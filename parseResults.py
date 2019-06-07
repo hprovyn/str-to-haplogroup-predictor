@@ -25,7 +25,9 @@ def readResultsFile(fil):
 
 import os
 def writeOutPosNegs(theid, outDir):
-    os.mkdir(os.path.join(outDir, theid))
+    thepath = os.path.join(outDir, theid)
+    print('attempting to make dir', thepath)
+    os.mkdir(thepath)
     posFile = os.path.join(outDir, theid, "pos")
     negFile = os.path.join(outDir, theid, "neg")
     strFile = os.path.join(outDir, theid, "str")
@@ -60,4 +62,7 @@ os.mkdir(outDir)
 
 for i in theKits.keys():
     if len(theKits[i]["STRs"].keys()) > 12 and len(theKits[i]["pos"]) > 0:
+        print(theKits[i])
         writeOutPosNegs(i, outDir)
+    else:
+        print(i,"ignored because not enough STRs or positive SNPs")
