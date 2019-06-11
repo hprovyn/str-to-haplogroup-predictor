@@ -21,7 +21,6 @@ import json
 import sys
 
 
-
 toIgnore = ["PF129", "Z2533", "S6868", "BY2285", "YP2229", "YP2250", "YP2228", "YP2129", "YP1838", "YP1807", "YP1841", "YP1740", "Y17293", "PF6234",  "L132.2"]
 
 if len(sys.argv) > 1:
@@ -34,6 +33,7 @@ def parseFile(file):
     return fr.readline().split(",")
 
 hierarchy = {}
+childMap = {}
 snps = {}
 
 def parseTreeJSON(fil):
@@ -42,26 +42,31 @@ def parseTreeJSON(fil):
     return (root["id"], hierarchy, snps)
 
 def parseSNPsString(snpsString):
-    thesnps = []
+    thesnps = set([])
     for snps in snpsString.split(", "):
         for snp in snps.split("/"):
-            thesnps.append(snp)
+            thesnps.add(snp)
     return thesnps
             
 def recurseTreeJson(node, hierarchy, snps):
     if "children" in node:
+        childMap[node["id"]] = []
         for child in node["children"]:
+            childMap[node["id"]].append(child["id"])
             hierarchy[child["id"]] = node["id"]
             snps[child["id"]] = parseSNPsString(child["snps"])
             recurseTreeJson(child, hierarchy, snps)
                 
 def getChildren(clade, childParents):
-    children = []
-    for child in childParents:
-        if childParents[child] == clade:
-            children.append(child)
-
-    return children
+#    children = []
+#    for child in childParents:
+#        if childParents[child] == clade:
+#            children.append(child)
+#
+    if clade in childMap:
+        return childMap[clade]
+    else:
+        return []
 
 def isInChildrenThisLevel(clade, positives, childParents):
     children = getChildren(clade, childParents)
@@ -252,8 +257,14 @@ def getRankedSolutions(positives, negatives, hierarchy):
     scoredSolutions = sorted(scoredSolutions, key=itemgetter(4), reverse=True)
     
     return scoredSolutions
-        
+
+import time
+start = time.time()
+
 a = parseTreeJSON(treeFile)
+end = time.time()
+print('load tree elapsed time,' + str(round((end-start)/60,2)) + " minutes\n")
+
 hierarchy = a[1]
 snps = a[2]
 
@@ -272,7 +283,10 @@ for sampleid in get_immediate_subdirectories(samples_path):
             positives.remove(ign)
         if ign in negatives:
             negatives.remove(ign)
+    start = time.time()
     b = getRankedSolutions(positives, negatives, hierarchy)
+    end = time.time()
+    print('find clade,' + str(round((end-start)/60,2)) + " minutes\n")
     if len(b) > 0:
         print(sampleid, ' computed as ', b[0][1])
         cladeMap[sampleid] = b[0][1]
