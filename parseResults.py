@@ -61,7 +61,7 @@ except:
 os.mkdir(outDir)
 
 for i in theKits.keys():
-    if len(theKits[i]["STRs"].keys()) > 12 and len(theKits[i]["pos"]) > 0:
+    if len(theKits[i]["STRs"].keys()) > 15 and len(theKits[i]["pos"]) > 0:
         print(theKits[i])
         writeOutPosNegs(i, outDir)
     else:

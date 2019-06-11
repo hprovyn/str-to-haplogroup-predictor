@@ -78,7 +78,7 @@ def parseKits(haplogroupFile, datadir, hierarchy, panelMap):
                         strtouse = subs[thestr]
                     kitToAdd["STRs"][strtouse] = allele.replace("\\","")
                     kitToAdd["allowableDownstream"] = allowableDownstream
-            if len(kitToAdd["STRs"]) >= 18:
+            if len(kitToAdd["STRs"]) >= 15:
                 kits[theid] = kitToAdd
             strfile.close()
     return kits

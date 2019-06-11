@@ -1,5 +1,5 @@
 #SET PARAMS FROM CONFIG
-CFG_FILE=config_hunter.txt
+CFG_FILE=hunter.txt
 CFG_CONTENT=$(cat $CFG_FILE | sed -r '/[^=]+=[^=]+/!d' | sed -r 's/\s+=\s/=/g')
 eval "$CFG_CONTENT"
 

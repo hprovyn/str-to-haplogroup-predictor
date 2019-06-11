@@ -279,4 +279,4 @@ for sampleid in get_immediate_subdirectories(samples_path):
     else:
         print(sampleid, ' unable to compute')
         cladeMap[sampleid] = "?"
-writeSampleCladesFile(cladeMap)
+    writeSampleCladesFile(cladeMap)
