@@ -8,6 +8,7 @@ PATH=$PATH:$pythonPath
 parseResults_py="$pythonScriptsDir\parseResults.py"
 createCSVinputForRF_py="$pythonScriptsDir\createCSVinputForRF.py"
 rfExperiment_py="$pythonScriptsDir\RF_experiment.py"
+rfPredict_py="$pythonScriptsDir\RF_predict.py"
 cladeFinder_py="$pythonScriptsDir\cladeFinder.py"
 
 dataDir="$experimentDir\data"
@@ -15,7 +16,4 @@ cladeFinderOutputFile="$experimentDir\sampleCladesFound"
 csvOutputForRFfile="$experimentDir\csv_for_rf.csv"
 modelOutputFile="$experimentDir\modelOutput.csv"
 
-python "$parseResults_py" "$resultsFile" "$dataDir"
-python "$cladeFinder_py"  "$treeFile" "$dataDir" "$cladeFinderOutputFile"
-python "$createCSVinputForRF_py" "$treeFile" "$dataDir" "$cladeFinderOutputFile" "$csvOutputForRFfile"
-python "$rfExperiment_py"  "$csvOutputForRFfile"  "$modelOutputFile" "$model" "$refine_hg_based_on_strs_gd_cutoff" "$iterations"
+python "$rfPredict_py" "$csvOutputForRFfile" "$dataDir" $1

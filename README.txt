@@ -16,6 +16,23 @@ REQUIREMENTS
 
 EXPERIMENT PROCESS
 
+There are two shell files:
+
+A) runExperiment.sh
+
+Does everything to prepare data and run experiment.
+Takes no command line arguments.
+
+B) runPredict.sh <sampleId>
+
+This can only be run after runExperiment.sh because it requires the csv output containing STRs and SNPs for each sample as input.
+
+Takes a single command line argument representing a sample id in your data directory.
+
+It will train a model using as many STRs as present in prediction sample and print a result to an output file in the data directory called "prediction". This contains the set of STRs used to train the model, model train time, and the ranked order of predicted classes.
+
+Description of Scripts
+
 Four scripts are ran in order as part of the experiment:
 
 1) parseResults.py
