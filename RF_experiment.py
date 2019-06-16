@@ -21,4 +21,4 @@ if len(sys.argv) > 1:
     cutoff = int(sys.argv[4])
     iterations = int(sys.argv[5])
 
-CommonMethods.experiment(trainFile, modesIncluded, cutoff, experimentOutputFile)
+CommonMethods.experiment(trainFile, modesIncluded, cutoff, experimentOutputFile, iterations)

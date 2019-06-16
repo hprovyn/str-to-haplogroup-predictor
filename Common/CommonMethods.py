@@ -180,7 +180,7 @@ def getRefined(cutoff, thekits, theids, thehgs, uncertainKits, uncertainIds, unc
     
 from sklearn.ensemble import RandomForestClassifier
 
-clf = RandomForestClassifier(n_estimators=100, max_depth=2,random_state=0,class_weight="balanced")
+clf = RandomForestClassifier(n_estimators=300, max_depth=7,random_state=0,class_weight="balanced")
 
 def getTrainingSamplesFromFile(fil, modesIncluded):
     thekits = []
@@ -215,30 +215,35 @@ def createTrainTest(x, y, ids):
         hgElems = len(hgMap[hg])
         if hgElems > 2:
             idsToHoldout.append(hgMap[hg][random.randint(0, hgElems - 1)])
+    correctOrderIdsHoldout = []
     for theid in ids:
         idx = ids.index(theid)
         if theid in idsToHoldout:
             xH.append(x[idx])
             yH.append(y[idx])
+            correctOrderIdsHoldout.append(theid)
         else:
             xT.append(x[idx])
             yT.append(y[idx])
-    return (xT, yT, xH, yH, idsToHoldout)
+    return (xT, yT, xH, yH, correctOrderIdsHoldout)
 
 import time
 
-def experiment(infile, modesIncluded, cutoff, outfile):
+def experiment(infile, modesIncluded, cutoff, outfile, iterations):
     (thekits, theids, thehgs, uncertainKits, uncertainIds, uncertainAllowable, rejected) = getTrainingSamplesFromFile(infile, modesIncluded)
     if cutoff:
         getRefined(cutoff, thekits, theids, thehgs, uncertainKits, uncertainIds, uncertainAllowable)
     (x, ids, y) = excludeQuestionMarks(thekits, theids, thehgs)
-    (xT, yT, xH, yH, idsToHoldout) = createTrainTest(x, y, ids)
-    clf.fit(xT, yT)
-    start = time.time()
-    preds = clf.predict(xH)
-    end = time.time()
-    (accuracy, classAccuracy, truthMatrix, wronglyPredictedIdsAs) = score(preds, yH, idsToHoldout)
-    writeResults(outfile, end - start, y, yH, x, accuracy, classAccuracy, truthMatrix, wronglyPredictedIdsAs)
+    accuracySum = 0
+    for i in range(iterations):
+        (xT, yT, xH, yH, idsToHoldout) = createTrainTest(x, y, ids)
+        clf.fit(xT, yT)
+        start = time.time()
+        preds = clf.predict(xH)
+        end = time.time()
+        (accuracy, classAccuracy, truthMatrix, wronglyPredictedIdsAs) = score(preds, yH, idsToHoldout)
+        accuracySum += accuracy
+    writeResults(outfile, end - start, y, yH, x, accuracySum / iterations, classAccuracy, truthMatrix, wronglyPredictedIdsAs)
 
     
 def getValuesForPrediction(fil, strs, dubSTRs, quadSTRs):
