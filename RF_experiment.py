@@ -28,5 +28,6 @@ if len(sys.argv) > 1:
         utilityWeights = None
     else:
         utilityWeights = [utilityUnderSpecificityError, utilityOverSpecificityError, utilityCompletelyWrongError, utilityCorrect]
+    experimentMapFileStem = sys.argv[10]
 
-CommonMethods.experimentErrorPolicy(trainFile, experimentOutputFile, panelHierarchyFile, policyFileStem, modelPickleFileStem, utilityWeights)
+CommonMethods.experimentErrorPolicy(trainFile, experimentOutputFile, panelHierarchyFile, policyFileStem, modelPickleFileStem, utilityWeights, experimentMapFileStem)

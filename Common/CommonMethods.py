@@ -355,10 +355,16 @@ def readPolicy(policyFile):
                 policyB = float(policy)
     return (policyA, policyB)
 
+def persistExperimentMap(experimentMapFileStem, modesIncluded, expMap):
+    with open(experimentMapFileStem + "_" + modesIncluded + ".csv", "w") as w:
+        w.write(",".join(["a","b","under specific errors", "over specific errors", "completely wrong errors", "correct", "percent correct", "utility"]) + "\n")
+        for entry in expMap:
+            w.write(",".join(str(e) for e in entry) + "\n")
+    w.close()
 
 import pickle
 
-def experimentErrorPolicy(infile, outfile, panelHierFile, policyFileStem, modelPickleFileStem, utilityWeights):
+def experimentErrorPolicy(infile, outfile, panelHierFile, policyFileStem, modelPickleFileStem, utilityWeights, experimentMapFileStem):
     for modesIncluded in modeCombos:
         
         (thekits, theids, thehgs, uncertainKits, uncertainIds, uncertainAllowable, rejected) = getTrainingSamplesFromFile(infile, modesIncluded)
@@ -389,7 +395,6 @@ def experimentErrorPolicy(infile, outfile, panelHierFile, policyFileStem, modelP
         #print(getUtility(errorTotals, errorWeights))
         optimum = optimizePolicyParameters(preds, predProbas, y, panelHier, [.11,.12,.13,.14,.15,.16,.17,.18,.19,.2,.21,.22,.23,.24,.25,.26,.27,.28,.29,.3],
                                  [1.02, 1.05,1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8,1.9,2,2.1,2.2,2.5,3,3.5,4], errorWeights)
-        
         #print(optimum)
         #print(len(preds))
         def sortByPercentCorrect(t):
@@ -403,6 +408,8 @@ def experimentErrorPolicy(infile, outfile, panelHierFile, policyFileStem, modelP
         def sortByUtility(t):
             return t[7]
         expMap = optimum[4]
+        persistExperimentMap(experimentMapFileStem, modesIncluded, expMap)
+
         expMap.sort(key=sortByPercentCorrect)
         print(modesIncluded)
         print('best percent correct', expMap[-1])
