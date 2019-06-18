@@ -83,8 +83,8 @@ def is_float(value):
 def addKits(strs, dubSTRs, quadSTRs, ks, ids, idsToKeep, hgs, allowable, thekits, theids, thehgs, uncertainKits, uncertainIds, uncertainAllowable, rejected):
         
     for i in range(len(ids)):
-        if i % 20 == 0:
-            print(i, "/", len(ids))
+        #if i % 20 == 0:
+            #print(i, "/", len(ids))
         thehg = hgs[i].strip(" ")
         if str(ks[strs[0]][i])  != "nan":
             thiskit = []
@@ -94,7 +94,7 @@ def addKits(strs, dubSTRs, quadSTRs, ks, ids, idsToKeep, hgs, allowable, thekits
                 ignore = True
             for STR in strs:
                 if str(ks[STR][i]) == "nan" or is_float(ks[STR][i]) == False:
-                    print("ignored", ks[STR][i])
+                    #print("ignored", ks[STR][i])
                     ignore = True
                 else:    
                     thiskit.append(float(ks[STR][i]))
@@ -102,7 +102,7 @@ def addKits(strs, dubSTRs, quadSTRs, ks, ids, idsToKeep, hgs, allowable, thekits
                 splits = str(ks[STR][i]).split("-")
                 sl = len(splits)
                 if sl < 2:
-                    print("ignored", ks[STR][i])
+                    #print("ignored", ks[STR][i])
                     ignore = True
                 else:
                     thiskit.append(float(splits[0]))    
@@ -245,28 +245,211 @@ def experiment(infile, modesIncluded, cutoff, outfile, iterations):
         accuracySum += accuracy
     writeResults(outfile, end - start, y, yH, x, accuracySum / iterations, classAccuracy, truthMatrix, wronglyPredictedIdsAs)
 
+
+def fromPredProbaGetPolicyValues(preds, predProba):
+    policyValues = []
+    for i in range(len(preds)):
+        a = np.sort(predProba[i])        
+        policyValues.append([preds[i],a[-1], a[-1] / a[-2]])
+    return policyValues
+
+def getPanelHier(panelHierFile):
+    panelHier = {}
+    with open(panelHierFile, "r") as f:
+        for line in f.readlines():
+            linesplit = line.strip("\n").split(",")
+            child = linesplit[0]
+            parent = linesplit[1]
+            panelHier[child] = parent
+    return panelHier
+
+def aIsUpstreamB(a, b, panelHier):
+    if a == b:
+        return True
+    if b in panelHier:
+        return aIsUpstreamB(a, panelHier[b], panelHier)
+    return False
+
+def getErrorTypesAndPercentCorrect(preds, truth, panelHier):
+    overSpecificityError = 0
+    underSpecificityError = 0
+    flatOutWrong = 0
+    correct = 0
+    for i in range(len(preds)):
+        p = preds[i]
+        t = truth[i]
+        if p != t:
+            if aIsUpstreamB(p, t, panelHier):
+                #print("underspecific", p, "should be", t)
+                underSpecificityError += 1
+            else:
+                if aIsUpstreamB(t, p, panelHier):
+                    overSpecificityError += 1
+                    #print("overspecific", p, "should be", t)
+                else:
+                    flatOutWrong += 1
+                    #print("completely wrong", p, "should be", t)
+        else:
+            correct += 1
+    #print(underSpecificityError, overSpecificityError, flatOutWrong, correct)
+    return ([underSpecificityError, overSpecificityError, flatOutWrong, correct], correct / len(preds))
+
+def refinePredictionsPerPolicy(preds, predProbas, panelHier, policyA, policyB):
+    policyValues = fromPredProbaGetPolicyValues(preds, predProbas)
+    refined = []
+    for policyValue in policyValues:
+        pred = policyValue[0]
+        maxPred = policyValue[1]
+        ratio = policyValue[2]
+        if maxPred < policyA or ratio < policyB:
+            if pred in panelHier:
+                refined.append(panelHier[pred])
+                #print(pred, 'refined based on policy to', panelHier[pred])
+            else:
+                refined.append(pred)
+        else:
+            refined.append(pred)
+    return refined
+
+def optimizePolicyParameters(preds, predProbas, truth, panelHier, policyARange, policyBRange, errorWeights):
+    bestA = policyARange[0]
+    bestB = policyBRange[0]
+    refined = refinePredictionsPerPolicy(preds, predProbas, panelHier, bestA, bestB)
+    (errorTotals, bestPercentCorrect) = getErrorTypesAndPercentCorrect(refined, truth, panelHier)
+    bestUtility = getUtility(errorTotals, errorWeights)
+    experimentMap = []
+    
+    for a in policyARange:
+        for b in policyBRange:
+            refined = refinePredictionsPerPolicy(preds, predProbas, panelHier, a, b)
+            (thisErrTots, thisPercentCorrect) = getErrorTypesAndPercentCorrect(refined, truth, panelHier)
+            thisUtility = getUtility(thisErrTots, errorWeights)
+            experimentMap.append([a,b,thisErrTots[0], thisErrTots[1], thisErrTots[2], thisErrTots[3], thisPercentCorrect, thisUtility])
+            if thisUtility > bestUtility:
+                bestA = a
+                bestB = b
+                bestUtility = thisUtility
+                bestPercentCorrect = thisPercentCorrect
+    return (bestA, bestB, bestUtility, bestPercentCorrect, experimentMap)
+
+def getUtility(errors, errorWeights):
+    return errors[0] * errorWeights[0] + errors[1] * errorWeights[1] + errors[2] * errorWeights[2] + errors[3] * errorWeights[3]
+
+def persistPolicy(policyA, policyB, policyFile):
+    with open(policyFile, "w") as w:
+        w.write("a," + str(policyA) + "\n")
+        w.write("b," + str(policyB) + "\n")
+    w.close()
+    
+def readPolicy(policyFile):
+    policyA = None
+    policyB = None
+    with open(policyFile, "r") as f:
+        for line in f.readlines():
+            linesplit = line.strip("\n").split(",")
+            policyVar = linesplit[0]
+            policy = linesplit[1]
+            if policyVar == "a":
+                policyA = float(policy)
+            if policyVar == "b":
+                policyB = float(policy)
+    return (policyA, policyB)
+
+
+import pickle
+
+def experimentErrorPolicy(infile, outfile, panelHierFile, policyFileStem, modelPickleFileStem, utilityWeights):
+    for modesIncluded in modeCombos:
+        
+        (thekits, theids, thehgs, uncertainKits, uncertainIds, uncertainAllowable, rejected) = getTrainingSamplesFromFile(infile, modesIncluded)
+        #if cutoff:
+        #    getRefined(cutoff, thekits, theids, thehgs, uncertainKits, uncertainIds, uncertainAllowable)
+        (x, ids, y) = excludeQuestionMarks(thekits, theids, thehgs)
+        #accuracySum = 0
+        (xT, yT, xH, yH, idsToHoldout) = createTrainTest(x, y, ids)
+        clf.fit(xT, yT)
+        #start = time.time()
+        preds = clf.predict(x)
+        predProbas = clf.predict_proba(x)
+        pickle.dump(clf, open(getModesPklFile(modelPickleFileStem, modesIncluded), 'wb'))
+        
+        #underSpecificityErrorWeight = -1
+        #overSpecificityErrorWeight = -3
+        #completelyWrongErrorWeight = -5
+        #rightWeight = 0
+        if utilityWeights is None:
+            errorWeights = [0, 0, 0, 0]
+        else:
+            errorWeights = utilityWeights
+        
+        #policyValues = fromPredProbaGetPolicyValues(preds, predProbas)
+        #print(policyValues)
+        panelHier = getPanelHier(panelHierFile)
+        (errorTotals, percentCorrect) = getErrorTypesAndPercentCorrect(preds, y, panelHier)
+        #print(getUtility(errorTotals, errorWeights))
+        optimum = optimizePolicyParameters(preds, predProbas, y, panelHier, [.11,.12,.13,.14,.15,.16,.17,.18,.19,.2,.21,.22,.23,.24,.25,.26,.27,.28,.29,.3],
+                                 [1.02, 1.05,1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8,1.9,2,2.1,2.2,2.5,3,3.5,4], errorWeights)
+        
+        #print(optimum)
+        #print(len(preds))
+        def sortByPercentCorrect(t):
+            return t[6]
+        def sortByCompletelyWrong(t):
+            return t[4]
+        def sortByOverSpecific(t):
+            return t[3]
+        def sortByUnderSpecific(t):
+            return t[2]
+        def sortByUtility(t):
+            return t[7]
+        expMap = optimum[4]
+        expMap.sort(key=sortByPercentCorrect)
+        print(modesIncluded)
+        print('best percent correct', expMap[-1])
+        if utilityWeights == None:
+            policyA = expMap[-1][0]
+            policyB = expMap[-1][1]
+        
+        expMap.sort(key=sortByCompletelyWrong)
+        print('least completely wrong', expMap[0])
+        expMap.sort(key=sortByOverSpecific)
+        print('least over specific', expMap[0])
+        expMap.sort(key=sortByUnderSpecific)
+        print('least under specific', expMap[0])
+        expMap.sort(key=sortByUtility)
+        print('highest utility', expMap[-1])
+        if utilityWeights != None:
+            policyA = expMap[-1][0]
+            policyB = expMap[-1][1]
+        
+        persistPolicy(policyA, policyB, getPolicyFile(policyFileStem, modesIncluded))
     
 def getValuesForPrediction(fil, strs, dubSTRs, quadSTRs):
     with open(fil, "r") as f:
-        filestrs = f.readline().split(",")
+        filestrs = f.readline().strip("/n").split(",")
         strmap = {}
         for thestr in filestrs:
             (strname, strval) = thestr.split("=")
             strmap[strname] = strval
+        print(strmap)
+        print(len(strmap.keys()))
         ignore = False
         thiskit = []
         for STR in strs:
             if STR not in strmap or is_float(strmap[STR]) == False:
+                print('missing or not float', STR)
                 ignore = True
             else:    
                 thiskit.append(float(strmap[STR]))
         for STR in dubSTRs:
             if STR not in strmap:
+                print('missing', STR)
                 ignore = True
             else:
                 splits = strmap[STR].split("-")
                 sl = len(splits)
                 if sl < 2:
+                    print('too few palindromes', STR)
                     ignore = True
                 else:
                     thiskit.append(float(splits[0]))    
@@ -274,11 +457,13 @@ def getValuesForPrediction(fil, strs, dubSTRs, quadSTRs):
                     thiskit.append(float(sl))
         for STR in quadSTRs:
             if STR not in strmap:
+                print('missing', STR)
                 ignore = True
             else:
                 splits = strmap[STR].split("-")
                 sl = len(splits)
                 if sl < 4:
+                    print('too few palindromes', STR)
                     ignore = True
                 else:
                     thiskit.append(float(splits[0]))
@@ -291,43 +476,60 @@ def getValuesForPrediction(fil, strs, dubSTRs, quadSTRs):
         else:
             return thiskit
             
+
+modeCombos = ["abcd","abc","ab","cd","a","b","c","d"]
+
+def getModesPklFile(stem, modes):
+    return stem + "_" + modes + ".pkl"
+
+def getPolicyFile(stem, modes):
+    return stem + "_" + modes + ".csv"
+
 import os
 
-def predict(infile, dataDir, sampleId):
+def predict(infile, dataDir, sampleId, panelHierarchy, policyFileStem, modelPickleFileStem):
     predfile = os.path.join(dataDir,sampleId,"str")
     outfile = os.path.join(dataDir,sampleId,"prediction")
-    modeCombos = ["abcd","abc","ab","cd","a","b","c","d"]
     rejected = True
     modesIdx = 0
     while rejected and modesIdx < len(modeCombos):
         modesIncluded = modeCombos[modesIdx]
         (strs, dubSTRs, quadSTRs) = getSTRLabelsFromSets(modesIncluded)
+        print(modesIncluded)
         predstrs = getValuesForPrediction(predfile, strs, dubSTRs, quadSTRs)
         if predstrs != None:
             rejected = False
         modesIdx += 1
-    print(strs, dubSTRs, quadSTRs)
-    if rejected:
+    print(modesIncluded, strs, dubSTRs, quadSTRs)
+    if predstrs == None:
         print("Rejected, not enough STRs in sample to predict")
     else:
-        print(predstrs)
+        print(modesIncluded, predstrs)
 #        if modesIncluded = "a":
 #            cutoff = 3
 #        else:
 #            cutoff = (len(modesIncluded) - 1) * 12
-        (thekits, theids, thehgs, uncertainKits, uncertainIds, uncertainAllowable, rejected) = getTrainingSamplesFromFile(infile, modesIncluded)
+        #(thekits, theids, thehgs, uncertainKits, uncertainIds, uncertainAllowable, rejected) = getTrainingSamplesFromFile(infile, modesIncluded)
         #if cutoff:
             #getRefined(cutoff, thekits, theids, thehgs, uncertainKits, uncertainIds, uncertainAllowable)
-        (x, ids, y) = excludeQuestionMarks(thekits, theids, thehgs)
+        #(x, ids, y) = excludeQuestionMarks(thekits, theids, thehgs)
+        modelPickleFile = getModesPklFile(modelPickleFileStem, modesIncluded)
         start = time.time()
-        clf.fit(x, y)
+        clf = pickle.load(open(modelPickleFile, 'rb'))
         end = time.time()
+        
         
         preds = clf.predict([predstrs])
         predproba = clf.predict_proba([predstrs])
+        
+        
         print("predicted as", preds[0])
         predprobaclass = []
         print(clf.classes_)
+        
+        (policyA, policyB) = readPolicy(getPolicyFile(policyFileStem, modesIncluded))
+        refined = refinePredictionsPerPolicy(preds, predproba, panelHierarchy, policyA, policyB)
+        print('refined as', refined[0])
         
         def sortPredProba(t):
             return t[0]
@@ -341,7 +543,7 @@ def predict(infile, dataDir, sampleId):
         print(predprobaclass)
         with open(outfile, "w") as w:
             w.write("STR sets used," + modesIncluded + "\n")
-            w.write("model train minutes," + str(round((end - start)/60,3)) + "\n")
+            w.write("model load seconds," + str(round((end - start),3)) + "\n")
             for p in predprobaclass:
                 w.write(p[1] + "," + str(round(p[0],4)) + "\n")
         w.close()

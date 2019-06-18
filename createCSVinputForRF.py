@@ -178,6 +178,28 @@ panelMap = {"A": [["A00", "A1a", "A1b1", "A1*", "A1b*"],0],
              "T-L131":[["T-L131"],0],
              "T-P77":[["T-P77"],0]}
 
+def writePanelTree(panelMap, panelHierFile):
+    justBranches = []
+    branchToPanelMap = {}
+    panelHier = {}
+    for p in panelMap:
+        thebranch = panelMap[p][0][0]
+        justBranches.append(thebranch)
+        branchToPanelMap[thebranch] = p
+    for branch in branchToPanelMap:
+        added = False
+        ups = getUpstream(branch)
+        ups.remove(branch)
+        for up in ups:
+            if not added:
+                if up in branchToPanelMap:
+                    panelHier[branchToPanelMap[branch]] = branchToPanelMap[up]
+                    added = True
+    with open(panelHierFile, "w") as w:
+        for p in panelHier:
+            w.write(p + "," + panelHier[p] + "\n")
+    w.close()            
+                
 def getAllowableDownstream(negs, snpPredictedClade, panelMap, datadir, theid):
     allowableDownstream = list(panelMap.keys())
     if snpPredictedClade != "?":
@@ -235,6 +257,7 @@ if len(sys.argv) > 1:
     datadir = sys.argv[2]
     haplogroupFile = sys.argv[3]
     csvoutrffile = sys.argv[4]
+    panelHierFile = sys.argv[5]
     
 thetreestuff = parseTreeJSON(treeFile)
 hierarchy = thetreestuff[1]
@@ -245,5 +268,5 @@ headers = parseHeaders(kits)
 
 
 createCSVforRF(csvoutrffile, headers, kits)
-
+writePanelTree(panelMap, panelHierFile)
     

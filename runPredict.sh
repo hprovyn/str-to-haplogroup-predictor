@@ -15,5 +15,8 @@ dataDir="$experimentDir\data"
 cladeFinderOutputFile="$experimentDir\sampleCladesFound"
 csvOutputForRFfile="$experimentDir\csv_for_rf.csv"
 modelOutputFile="$experimentDir\modelOutput.csv"
+panelHierarchyFile="$experimentDir\panelHierarchy.csv"
+predictionPolicyFileStem="$experimentDir\predictionPolicy"
+modelPickleFileStem="$experimentDir\model"
 
-python "$rfPredict_py" "$csvOutputForRFfile" "$dataDir" $1
+python "$rfPredict_py" "$csvOutputForRFfile" "$dataDir" "$panelHierarchyFile" "$predictionPolicyFileStem" "$modelPickleFileStem" $1

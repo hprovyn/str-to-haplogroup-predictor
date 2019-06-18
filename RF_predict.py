@@ -10,6 +10,9 @@ import sys
 if len(sys.argv) > 1:
     trainFile = sys.argv[1]
     dataDir = sys.argv[2]
-    sampleId = sys.argv[3]
+    panelHierarchyFile = sys.argv[3]
+    policyFileStem = sys.argv[4]
+    modelPickleFileStem = sys.argv[5]
+    sampleId = sys.argv[6]
 
-CommonMethods.predict(trainFile, dataDir, sampleId)
+CommonMethods.predict(trainFile, dataDir, sampleId, panelHierarchyFile, policyFileStem, modelPickleFileStem)

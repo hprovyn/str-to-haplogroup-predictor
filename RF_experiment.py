@@ -17,8 +17,16 @@ import sys
 if len(sys.argv) > 1:
     trainFile = sys.argv[1]
     experimentOutputFile = sys.argv[2]
-    modesIncluded = sys.argv[3]
-    cutoff = int(sys.argv[4])
-    iterations = int(sys.argv[5])
+    panelHierarchyFile = sys.argv[3]
+    policyFileStem = sys.argv[4]
+    modelPickleFileStem = sys.argv[5]
+    utilityUnderSpecificityError = int(sys.argv[6])
+    utilityOverSpecificityError=int(sys.argv[7])
+    utilityCompletelyWrongError=int(sys.argv[8])
+    utilityCorrect=int(sys.argv[9])
+    if utilityUnderSpecificityError == 0 and utilityOverSpecificityError == 0 and utilityCompletelyWrongError == 0 and utilityCorrect == 0:
+        utilityWeights = None
+    else:
+        utilityWeights = [utilityUnderSpecificityError, utilityOverSpecificityError, utilityCompletelyWrongError, utilityCorrect]
 
-CommonMethods.experiment(trainFile, modesIncluded, cutoff, experimentOutputFile, iterations)
+CommonMethods.experimentErrorPolicy(trainFile, experimentOutputFile, panelHierarchyFile, policyFileStem, modelPickleFileStem, utilityWeights)

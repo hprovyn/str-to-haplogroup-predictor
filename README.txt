@@ -9,7 +9,7 @@ Processes sample STR and SNP results along with a SNP phylogenetic tree to run a
 REQUIREMENTS
 
 . Python 3.6 (2 may work)#Python dependencies
-  . packages numpy, pandas, time, sys, sklearn, random, json, os, operator, shutil
+  . packages numpy, pandas, time, sys, sklearn, random, json, os, operator, shutil, pickle
 
 . CSV file containing STR and SNP results where each line contains a single ID, MARKER, ALLELE
 . JSON file containing YFull tree
@@ -22,6 +22,7 @@ A) runExperiment.sh
 
 Does everything to prepare data and run experiment.
 Takes no command line arguments.
+For all STR group combinations, trains and serializes a model and optimizes and persists :a prediction policy that in some cases changes prediction to a less specific haplogroup panel according to utility weights (if any are changed from default of zero in config file) or to maximize percent correct prediction.
 
 B) runPredict.sh <sampleId>
 
@@ -29,7 +30,7 @@ This can only be run after runExperiment.sh because it requires the csv output c
 
 Takes a single command line argument representing a sample id in your data directory.
 
-It will train a model using as many STRs as present in prediction sample and print a result to an output file in the data directory called "prediction". This contains the set of STRs used to train the model, model train time, and the ranked order of predicted classes.
+Loads model from pickle file trained to as many STRs as present in prediction sample, applies prediction policy computed in experiment step, and prints a result to an output file in the data directory called "prediction". This contains the set of STRs used to train the model, model train time, and the ranked order of predicted classes.
 
 Description of Scripts
 
