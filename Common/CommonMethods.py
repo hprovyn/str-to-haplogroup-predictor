@@ -431,57 +431,78 @@ def experimentErrorPolicy(infile, outfile, panelHierFile, policyFileStem, modelP
         
         persistPolicy(policyA, policyB, getPolicyFile(policyFileStem, modesIncluded))
     
-def getValuesForPrediction(fil, strs, dubSTRs, quadSTRs):
+def getAlleleArrayFromFile(fil):
     with open(fil, "r") as f:
         filestrs = f.readline().strip("/n").split(",")
-        strmap = {}
-        for thestr in filestrs:
-            (strname, strval) = thestr.split("=")
-            strmap[strname] = strval
-        print(strmap)
-        print(len(strmap.keys()))
-        ignore = False
-        thiskit = []
-        for STR in strs:
-            if STR not in strmap or is_float(strmap[STR]) == False:
-                print('missing or not float', STR)
-                ignore = True
-            else:    
-                thiskit.append(float(strmap[STR]))
-        for STR in dubSTRs:
-            if STR not in strmap:
-                print('missing', STR)
-                ignore = True
-            else:
-                splits = strmap[STR].split("-")
-                sl = len(splits)
-                if sl < 2:
-                    print('too few palindromes', STR)
-                    ignore = True
-                else:
-                    thiskit.append(float(splits[0]))    
-                    thiskit.append(float(splits[sl-1]))
-                    thiskit.append(float(sl))
-        for STR in quadSTRs:
-            if STR not in strmap:
-                print('missing', STR)
-                ignore = True
-            else:
-                splits = strmap[STR].split("-")
-                sl = len(splits)
-                if sl < 4:
-                    print('too few palindromes', STR)
-                    ignore = True
-                else:
-                    thiskit.append(float(splits[0]))
-                    thiskit.append(float(splits[1]))
-                    thiskit.append(float(splits[sl-2]))
-                    thiskit.append(float(splits[sl-1]))
-                    thiskit.append(float(sl))
-        if ignore:
-            return None
+        return filestrs
+
+def getValuesForPredictionFromAlleleArray(strarray, strs, dubSTRs, quadSTRs, percentMissingSTRThreshold):
+    strmap = {}
+    for thestr in strarray:
+        (strname, strval) = thestr.split("=")
+        strmap[strname] = strval
+    print(strmap)
+    print(len(strmap.keys()))
+    thiskit = []
+    missing = 0
+    for STR in strs:
+        if STR not in strmap or is_float(strmap[STR]) == False:
+            print('missing or not float', STR)
+            missing += 1
+            thiskit.append(float(0))
+        else:    
+            thiskit.append(float(strmap[STR]))
+    for STR in dubSTRs:
+        if STR not in strmap:
+            print('missing', STR)
+            missing += 1
+            thiskit.append(float(0))
+            thiskit.append(float(0))
+            thiskit.append(float(2))
         else:
-            return thiskit
+            splits = strmap[STR].split("-")
+            sl = len(splits)
+            if sl < 2:
+                for i in range(2-sl):
+                    thiskit.append(float(0))
+                for i in range(sl):
+                    thiskit.append(float(splits[i]))
+                thiskit.append(float(sl))
+                print('too few palindromes', STR)
+            else:
+                thiskit.append(float(splits[0]))    
+                thiskit.append(float(splits[sl-1]))
+                thiskit.append(float(sl))
+    for STR in quadSTRs:
+        if STR not in strmap:
+            print('missing', STR)
+            missing += 1
+            thiskit.append(float(0))
+            thiskit.append(float(0))
+            thiskit.append(float(0))
+            thiskit.append(float(0))
+            thiskit.append(float(4))
+        else:
+            splits = strmap[STR].split("-")
+            sl = len(splits)
+            if sl < 4:
+                for i in range(4-sl):
+                    thiskit.append(float(0))
+                for i in range(sl):
+                    thiskit.append(float(splits[i]))
+                thiskit.append(float(sl))
+                print('too few palindromes', STR)
+            else:
+                thiskit.append(float(splits[0]))
+                thiskit.append(float(splits[1]))
+                thiskit.append(float(splits[sl-2]))
+                thiskit.append(float(splits[sl-1]))
+                thiskit.append(float(sl))
+    percentMissing = missing / (len(strs) + len(dubSTRs) + len(quadSTRs))
+    if percentMissing > percentMissingSTRThreshold:
+        print("percent missing STRs:", percentMissing, "above threshold", percentMissingSTRThreshold)
+        return None
+    return thiskit
             
 
 modeCombos = ["abcd","abc","ab","cd","a","b","c","d"]
@@ -493,23 +514,33 @@ def getPolicyFile(stem, modes):
     return stem + "_" + modes + ".csv"
 
 import os
-
-def predict(infile, dataDir, sampleId, panelHierarchy, policyFileStem, modelPickleFileStem):
-    predfile = os.path.join(dataDir,sampleId,"str")
-    outfile = os.path.join(dataDir,sampleId,"prediction")
+    
+def predict(dataDir, sampleId, panelHierarchy, policyFileStem, modelPickleFileStem, percentMissingSTRThreshold):
+    if "," in sampleId:
+        queryAlleleArray = sampleId.split(",")
+        outfile = os.path.join(dataDir, "prediction")
+    else:
+        predfile = os.path.join(dataDir,sampleId,"str")
+        queryAlleleArray = getAlleleArrayFromFile(predfile)
+        outfile = os.path.join(dataDir,sampleId,"prediction")
+        
     rejected = True
     modesIdx = 0
     while rejected and modesIdx < len(modeCombos):
         modesIncluded = modeCombos[modesIdx]
         (strs, dubSTRs, quadSTRs) = getSTRLabelsFromSets(modesIncluded)
         print(modesIncluded)
-        predstrs = getValuesForPrediction(predfile, strs, dubSTRs, quadSTRs)
+        predstrs = getValuesForPredictionFromAlleleArray(queryAlleleArray, strs, dubSTRs, quadSTRs, percentMissingSTRThreshold)
         if predstrs != None:
             rejected = False
         modesIdx += 1
     print(modesIncluded, strs, dubSTRs, quadSTRs)
+    return loadModelAndPredict(predstrs, panelHierarchy, modesIncluded, policyFileStem, modelPickleFileStem, outfile)
+    
+def loadModelAndPredict(predstrs, panelHierarchy, modesIncluded, policyFileStem, modelPickleFileStem, outfile):
     if predstrs == None:
         print("Rejected, not enough STRs in sample to predict")
+        return "Rejected, not enough STRs in sample to predict"
     else:
         print(modesIncluded, predstrs)
 #        if modesIncluded = "a":
@@ -548,12 +579,15 @@ def predict(infile, dataDir, sampleId, panelHierarchy, policyFileStem, modelPick
         predprobaclass.sort(key=sortPredProba)
         predprobaclass.reverse()
         print(predprobaclass)
-        with open(outfile, "w") as w:
-            w.write("STR sets used," + modesIncluded + "\n")
-            w.write("model load seconds," + str(round((end - start),3)) + "\n")
-            for p in predprobaclass:
-                w.write(p[1] + "," + str(round(p[0],4)) + "\n")
-        w.close()
+# =============================================================================
+#         with open(outfile, "w") as w:
+#             w.write("STR sets used," + modesIncluded + "\n")
+#             w.write("model load seconds," + str(round((end - start),3)) + "\n")
+#             for p in predprobaclass:
+#                 w.write(p[1] + "," + str(round(p[0],4)) + "\n")
+#         w.close()
+# =============================================================================
+        return refined[0]
     
 def excludeQuestionMarks(thekits, theids, thehgs):
     removedNonesSTRs = []
