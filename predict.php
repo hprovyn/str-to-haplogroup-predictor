@@ -1,6 +1,22 @@
-<?php 
+<html>
+<body>
 
-$message = exec("/runPredict.sh CDY=36-37,DYS19=14,DYS385=13-18,DYS388=13,DYS389I=14,DYS389II=30,DYS390=23,DYS391=10,DYS392=11,DYS393=12,DYS426=11,DYS437=14,DYS438=10,DYS439=11,DYS442=12,DYS447=27,DYS448=21,DYS449=28,DYS454=11,DYS455=11,DYS456=15,DYS458=18.2,DYS459=8-9,DYS460=11,DYS464=15-15-15-16,DYS570=18,DYS576=17,DYS607=13,DYS724=36-37,Y-GATA-H4=11,YCAII=19-22");
-print_r($message);
+STRs input: <?php echo $_POST["input"]; ?>
+<br><br>
+<?php $input = trim($_POST["input"]);
+$parsed=$input;
+if (strpos($input, '=') === false) {
+    
+$pieces = explode(" ", $input);
+$alleles = array();
+for ($x = 0; $x < count($pieces) / 2; $x++) {
+array_push($alleles, $pieces[$x * 2] . "=" . $pieces[$x * 2 + 1]);
+}
+$parsed = join(",", $alleles);
+}
+echo "STRs parsed: " . $parsed . "<br><br>";
+$message = exec('/var/lib/str-to-haplogroup-predictor/runPredict.sh ' . $parsed);
+echo "Your predicted haplogroup is " . $message; ?>
 
-?>
+</body>
+</html>
