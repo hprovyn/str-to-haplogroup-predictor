@@ -8,4 +8,4 @@ utilityUnderSpecificityError=0
 utilityOverSpecificityError=0
 utilityCompletelyWrongError=0
 utilityCorrect=0
-percentMissingSTRThreshold=25
+percentMissingSTRThreshold=20

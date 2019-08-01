@@ -498,7 +498,8 @@ def getValuesForPredictionFromAlleleArray(strarray, strs, dubSTRs, quadSTRs, per
                 thiskit.append(float(splits[sl-2]))
                 thiskit.append(float(splits[sl-1]))
                 thiskit.append(float(sl))
-    percentMissing = missing / (len(strs) + len(dubSTRs) + len(quadSTRs))
+    percentMissing = float(missing) / (len(strs) + len(dubSTRs) + len(quadSTRs))
+    print(percentMissing, missing, len(strs), len(dubSTRs), len(quadSTRs))
     if percentMissing > percentMissingSTRThreshold:
         print("percent missing STRs:", percentMissing, "above threshold", percentMissingSTRThreshold)
         return None

@@ -12,7 +12,7 @@ if len(sys.argv) > 1:
     panelHierarchyFile = sys.argv[2]
     policyFileStem = sys.argv[3]
     modelPickleFileStem = sys.argv[4]
-    percentMissingSTRThreshold = int(sys.argv[5])/100
+    percentMissingSTRThreshold = float(sys.argv[5])/100
     sampleId = sys.argv[6]
 
 CommonMethods.predict(dataDir, sampleId, panelHierarchyFile, policyFileStem, modelPickleFileStem, percentMissingSTRThreshold)
