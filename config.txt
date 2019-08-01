@@ -1,4 +1,5 @@
 pythonPath=#python directory
+pathSeparator=#windows '\', unix '/'
 pythonScriptsDir=#directory where you put the python scripts
 experimentDir=#directory to put all files necessary to run the experiment
 resultsFile=#csv file containing STR and SNP results where each line contains a single ID, MARKER, ALLELE
