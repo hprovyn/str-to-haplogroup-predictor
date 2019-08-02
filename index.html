@@ -2,18 +2,30 @@
 
 <html>
 <body>
+<img src="https://www.yseq.net/images/store_logo.png"><br>
+<h1>YSEQ Haplogroup Predictor (beta version)</h1><br>
 
-<h1>Haplogroup Predictor</h1><br>
+Developed by Hunter Provyn with input and support from YSEQ / Thomas Krahn.<br>
+The haplogroup prediction is backed by a Random Forest model implemented in python using <a href="https://scikit-learn.org/stable/">sklearn</a>.<br><br>
 
-Developed by Hunter Provyn with input and financial support from Thomas Krahn of YSEQ.<br>
-The haplogroup prediction is backed by a Random Forest model implemented in python using sklearn.<br><br>
+This YSEQ haplogroup predictor is open source software and can be cloned from GitHub: <a href="https://github.com/hprovyn/str-to-haplogroup-predictor">https://github.com/hprovyn/str-to-haplogroup-predictor</a><br><br>
 
-<a href="https://github.com/hprovyn/str-to-haplogroup-predictor">https://github.com/hprovyn/str-to-haplogroup-predictor</a><br><br>
-
+Please always give a link to <a href="http://predict.yseq.net">this</a> original website as a reference.<br>
+<br>
 Enter STRs in one of two formats, then press ENTER:<br><br>
-$STR1=$ALLELE1,$STR2=$ALLELE2, ...   OR   $STR1 $ALLELE1 $STR2 $ALLELE2 ...<br><br>
+$STR1=$ALLELE1,$STR2=$ALLELE2, ...   <br>
+OR   <br>
+$STR1 $ALLELE1 $STR2 $ALLELE2 ...<br>
+<br>
+
+<br>
 <form action="predict.php" method="POST">
 <input name=input action="predict.php" type=text></input>
 </form>
+<br>
+This YSEQ haplogroup predictor has been trained by 
+
+
+
 </body>
 </html>
