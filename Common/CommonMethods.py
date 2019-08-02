@@ -364,9 +364,10 @@ def persistExperimentMap(experimentMapFileStem, modesIncluded, expMap):
 
 import pickle
 
-def experimentErrorPolicy(infile, outfile, panelHierFile, policyFileStem, modelPickleFileStem, utilityWeights, experimentMapFileStem):
-    for modesIncluded in modeCombos:
-        
+import multiprocessing
+    
+class Experiment:
+    def parallelExperiment(self, infile, modesIncluded, panelHier, policyFileStem, modelPickleFileStem, utilityWeights, experimentMapFileStem):            
         (thekits, theids, thehgs, uncertainKits, uncertainIds, uncertainAllowable, rejected) = getTrainingSamplesFromFile(infile, modesIncluded)
         #if cutoff:
         #    getRefined(cutoff, thekits, theids, thehgs, uncertainKits, uncertainIds, uncertainAllowable)
@@ -377,7 +378,8 @@ def experimentErrorPolicy(infile, outfile, panelHierFile, policyFileStem, modelP
         #start = time.time()
         preds = clf.predict(x)
         predProbas = clf.predict_proba(x)
-        pickle.dump(clf, open(getModesPklFile(modelPickleFileStem, modesIncluded), 'wb'))
+        pklfile = open(getModesPklFile(modelPickleFileStem, modesIncluded), 'wb')
+        pickle.dump(clf, pklfile, protocol=2)
         
         #underSpecificityErrorWeight = -1
         #overSpecificityErrorWeight = -3
@@ -390,7 +392,7 @@ def experimentErrorPolicy(infile, outfile, panelHierFile, policyFileStem, modelP
         
         #policyValues = fromPredProbaGetPolicyValues(preds, predProbas)
         #print(policyValues)
-        panelHier = getPanelHier(panelHierFile)
+        
         (errorTotals, percentCorrect) = getErrorTypesAndPercentCorrect(preds, y, panelHier)
         #print(getUtility(errorTotals, errorWeights))
         optimum = optimizePolicyParameters(preds, predProbas, y, panelHier, [.11,.12,.13,.14,.15,.16,.17,.18,.19,.2,.21,.22,.23,.24,.25,.26,.27,.28,.29,.3],
@@ -430,6 +432,18 @@ def experimentErrorPolicy(infile, outfile, panelHierFile, policyFileStem, modelP
             policyB = expMap[-1][1]
         
         persistPolicy(policyA, policyB, getPolicyFile(policyFileStem, modesIncluded))
+
+def experimentErrorPolicy(infile, outfile, panelHierFile, policyFileStem, modelPickleFileStem, utilityWeights, experimentMapFileStem):
+    panelHier = getPanelHier(panelHierFile)
+        
+    processes = []
+    for modesIncluded in modeCombos:
+        e = Experiment()
+        p = multiprocessing.Process(target=e.parallelExperiment, args=(infile, modesIncluded, panelHier, policyFileStem, modelPickleFileStem, utilityWeights, experimentMapFileStem))
+        p.start()
+        processes.append(p)
+    for p in processes:
+        p.join()
     
 def getAlleleArrayFromFile(fil):
     with open(fil, "r") as f:
