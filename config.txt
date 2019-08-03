@@ -1,4 +1,5 @@
 pythonPath=#python directory
+htslibPath=#htslib directory containing tabix and bgzip
 pathSeparator=#windows '\', unix '/'
 pythonScriptsDir=#directory where you put the python scripts
 experimentDir=#directory to put all files necessary to run the experiment

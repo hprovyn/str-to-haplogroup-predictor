@@ -15,54 +15,43 @@ def readResultsFile(fil):
             allele = splitLine[2]
             #print(theid, marker, allele)
             if theid not in theKits.keys():
-                theKits[theid] = {"STRs": {}, "pos":[], "neg":[]}
+                theKits[theid] = {"str": {}, "pos":[], "neg":[]}
             if allele[-1] == "+":
                 theKits[theid]["pos"].append(marker)
             if allele[-1] == "-":
                 theKits[theid]["neg"].append(marker)
             if allele[-1] != "+" and allele[-1] != "-":
-                theKits[theid]["STRs"][marker] = allele
+                theKits[theid]["str"][marker] = allele
 
-import os
-def writeOutPosNegs(theid, outDir):
-    thepath = os.path.join(outDir, theid)
-    print('attempting to make dir', thepath)
-    os.mkdir(thepath)
-    posFile = os.path.join(outDir, theid, "pos")
-    negFile = os.path.join(outDir, theid, "neg")
-    strFile = os.path.join(outDir, theid, "str")
+def writeOutPosNegs(outFile):
+        
+    with open(outFile, 'w') as f:
+        for theid in theKits:
+            pos = theKits[theid]["pos"]
+            neg = theKits[theid]["neg"]
+            strs = theKits[theid]["str"]
+            if hasEnoughInfoToProceed(pos, strs):
+                for p in pos:
+                    f.write("\t".join(["pos", theid, theid, p, "."]) + "\n")
+                for n in neg:
+                    f.write("\t".join(["neg", theid, theid, n, "."]) + "\n")
+                for marker in strs:
+                    f.write("\t".join(["str", theid, theid, marker, strs[marker]]) + "\n")
+            else:
+                print(theid,"ignored because not enough STRs or positive SNPs")
+    f.close()
     
-    with open(posFile, 'w') as f:
-        f.write(",".join(theKits[theid]["pos"]))
-    f.close()
-    with open(negFile, 'w') as f:
-        f.write(",".join(theKits[theid]["neg"]))
-    f.close()
-    with open(strFile, 'w') as f:
-        kvs = []
-        for k in theKits[theid]["STRs"]:
-            kvs.append(k + "=" + theKits[theid]["STRs"][k])
-        f.write(",".join(kvs))
-    f.close()
-
+def hasEnoughInfoToProceed(pos, strs):
+    if len(strs) > 15 and len(pos) > 0:
+        return True
+    else:
+        return False
+    
 import sys
 
 if len(sys.argv) > 1:
     resultsFile = sys.argv[1]
-    outDir = sys.argv[2]
+    outFile = sys.argv[2]
 
 readResultsFile(resultsFile)
-
-import shutil
-try:
-    shutil.rmtree(outDir)
-except:
-    0
-os.mkdir(outDir)
-
-for i in theKits.keys():
-    if len(theKits[i]["STRs"].keys()) > 15 and len(theKits[i]["pos"]) > 0:
-        print(theKits[i])
-        writeOutPosNegs(i, outDir)
-    else:
-        print(i,"ignored because not enough STRs or positive SNPs")
+writeOutPosNegs(outFile)        
