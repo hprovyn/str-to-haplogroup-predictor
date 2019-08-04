@@ -20,12 +20,12 @@ bcftools query -f '%ID,' chrY_derived_1_hg38.vcf.gz > pos
 import json
 import sys
 
-
+#TODO this may need updating
 toIgnore = ["PF129", "Z2533", "S6868", "BY2285", "YP2229", "YP2250", "YP2228", "YP2129", "YP1838", "YP1807", "YP1841", "YP1740", "Y17293", "PF6234",  "L132.2"]
 
 if len(sys.argv) > 1:
     treeFile = sys.argv[1]
-    samples_path = sys.argv[2]
+    tabixFilePath = sys.argv[2]
     outputFile = sys.argv[3]
  
 def parseFile(file):
@@ -268,29 +268,56 @@ print('load tree elapsed time,' + str(round((end-start)/60,2)) + " minutes\n")
 hierarchy = a[1]
 snps = a[2]
 
-import os
-def get_immediate_subdirectories(a_dir):
-    return [name for name in os.listdir(a_dir)
-            if os.path.isdir(os.path.join(a_dir, name))]
-
 cladeMap = {}
 
-for sampleid in get_immediate_subdirectories(samples_path):
-    positives = set(parseFile(os.path.join(os.path.join(samples_path, sampleid),"pos")))
-    negatives = set(parseFile(os.path.join(os.path.join(samples_path, sampleid),"neg")))
-    for ign in toIgnore:
-        if ign in positives:
-            positives.remove(ign)
-        if ign in negatives:
-            negatives.remove(ign)
-    start = time.time()
-    b = getRankedSolutions(positives, negatives, hierarchy)
-    end = time.time()
-    print('find clade,' + str(round((end-start)/60,2)) + " minutes\n")
-    if len(b) > 0:
-        print(sampleid, ' computed as ', b[0][1])
-        cladeMap[sampleid] = b[0][1]
-    else:
-        print(sampleid, ' unable to compute')
-        cladeMap[sampleid] = "?"
-    writeSampleCladesFile(cladeMap)
+import tabix
+tb = tabix.load(tabixFilePath)
+
+#TODO get unique column values tabix query?
+ids = '1,2,3,8,11,49'.split(",")
+
+
+class ParallelCladeFind():
+        
+    def findClade(self, tb, sampleId, hierarchy, toIgnore):
+        posResults = tb.query("pos", idint, idint)
+        positives = set([p[3] for p in posResults])
+        negResults = tb.query("neg", idint, idint)
+        negatives = set([p[3] for p in negResults])
+        for ign in toIgnore:
+            if ign in positives:
+                positives.remove(ign)
+            if ign in negatives:
+                negatives.remove(ign)
+        b = getRankedSolutions(positives, negatives, hierarchy)
+        if len(b) > 0:
+            print(sampleId, ' computed as ', b[0][1])
+            return (sampleId, b[0][1])
+        else:
+            print(sampleId, ' unable to compute')
+            return (sampleId, "?")
+
+
+import multiprocessing
+
+processes = []
+allStart = time.time()
+
+for sampleId in ids:
+    idint = int(sampleId)
+    pcf = ParallelCladeFind()
+    p = multiprocessing.Process(target=pcf.findClade, args=(tb, sampleId, hierarchy, toIgnore))
+    p.start()
+    processes.append(p)
+
+cladeMap = {}
+for p in processes:
+    p.join()
+    cladeMap[p[0]] = p[1]
+
+allEnd = time.time()
+print('clade finder executed on ' + str(len(ids)) + ' ' + str(round((allEnd-allStart)/60,2)) + " minutes\n")
+print(str(round((allEnd-allStart)/len(ids),2)) + " seconds per sample\n")
+
+writeSampleCladesFile(cladeMap)
+
