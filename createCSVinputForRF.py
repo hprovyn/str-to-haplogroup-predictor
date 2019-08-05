@@ -80,28 +80,44 @@ def chunks(l, n):
         yield l[i:i + n]
 
 import multiprocessing
+
+import time
             
-def parseKits(haplogroupFile, tb, hierarchy, panelMap):
+def parseKits(haplogroupFile, tb, hierarchy, panelMap, panelHier):
     subs = {}
     kits = {}
+    start = time.time()
     with open(haplogroupFile, 'r') as f:
+        theids = []
+        thehgs = []
         for line in f.readlines():
             (theid, clade) = line.split(",")
-            kitToAdd = {}
-
-            if clade != "?\n":
-                hg = clade.replace("\n","") #TODO keep * for A super panel
+            thehg = clade.replace("\n","")
+            if thehg != "?":
+                theids.append(theid)
+                thehgs.append(thehg)
+        f.close()
+        mostSpecificPanels = {}
+        for hg in set(thehgs):
+            if hg != "?":
                 panels = getPanels(hg, panelMap)
                 if len(panels) > 0:
-                    print(panels)
+                    #print(panels)
                     panel = getMostSpecificPanel(panels, panelMap)
-                    print(theid, 'most specific', panel, 'for', clade)                    
-                    kitToAdd["Haplogroup"] = panel
+                    print('most specific', panel, 'for', hg)                    
+                    mostSpecificPanels[hg] = panel
                 else:
-                    kitToAdd["Haplogroup"] = "?"
+                    mostSpecificPanels[hg] = "?"
             else:
-                kitToAdd["Haplogroup"] = "?"
-            allowableDownstream = getAllowableDownstream([], kitToAdd["Haplogroup"], panelMap, tb, theid)
+                mostSpecificPanels[hg] = "?"
+        for i in range(len(thehgs)):
+            print('processing' + theids[i])
+            hg = thehgs[i]
+            theid = theids[i]
+            kitToAdd = {}
+
+            kitToAdd["Haplogroup"] = mostSpecificPanels[hg]
+            allowableDownstream = getAllowableDownstream([], kitToAdd["Haplogroup"], panelMap, tb, theid, panelHier)
             kitToAdd["STRs"] = {}
             strResults = tb.querys("str:" + theid + "-" + theid)
             strs = []
@@ -116,6 +132,8 @@ def parseKits(haplogroupFile, tb, hierarchy, panelMap):
                 kitToAdd["allowableDownstream"] = allowableDownstream
             if len(kitToAdd["STRs"]) >= 15:
                 kits[theid] = kitToAdd
+    end = time.time()
+    print("elapsed time processing specific and allowable downstream SNPs" + str(round((end - start) / 60,2)) + " min")
     return kits
 
 def parseKitsMulti(haplogroupFile, tb, hierarchy, panelMap):
@@ -172,6 +190,15 @@ def getUpstream(branch):
         seq.remove('')
     return seq
 
+def getUpstreamStop(branch, stop):
+    thebranch = branch
+    seq = [thebranch]
+    while thebranch in hierarchy and thebranch != stop:
+        thebranch = hierarchy[thebranch]
+        seq.append(thebranch)
+    if '' in seq:
+        seq.remove('')
+    return seq
 
 panelMap = {"A": [["A00", "A1a", "A1b1", "A1*", "A1b*"],0],
              "B": [["B"],0],
@@ -272,13 +299,13 @@ def writePanelTree(panelMap, panelHierFile):
             w.write(p + "," + panelHier[p] + "\n")
     w.close()            
                 
-def getAllowableDownstream(negs, snpPredictedClade, panelMap, tb, theid):
+def getAllowableDownstream(negs, snpPredictedClade, panelMap, tb, theid, panelHier):
     allowableDownstream = list(panelMap.keys())
     if snpPredictedClade != "?":
         allowableDownstream = []
         for panel in panelMap:
             if panel != snpPredictedClade:
-                if panelMap[snpPredictedClade][0][0] in getUpstream(panelMap[panel][0][0]):
+                if CommonMethods.aIsUpstreamB(snpPredictedClade, panel, panelHier):
                     allowableDownstream.append(panel)
     if len(allowableDownstream) > 0:
         toremove = []
@@ -289,7 +316,10 @@ def getAllowableDownstream(negs, snpPredictedClade, panelMap, tb, theid):
         for allowable in allowableDownstream:
             negated = False
             for upstreambranch in panelMap[allowable][0]:
-                for upstream in getUpstream(upstreambranch):
+                upstop = 'null'
+                if snpPredictedClade != "?":
+                    upstop = panelMap[snpPredictedClade][0][0]
+                for upstream in getUpstreamStop(upstreambranch, upstop):
                     if not negated and any(n in snps[upstream] for n in negs):
                         #print(allowable, 'disallowed due to a negative', negs, 'in upstream',upstream,snps[upstream])
                         negated = True
@@ -333,13 +363,19 @@ if len(sys.argv) > 1:
 thetreestuff = parseTreeJSON(treeFile)
 hierarchy = thetreestuff[1]
 
+writePanelTree(panelMap, panelHierFile)
+
 import tabix
 tb = tabix.open(tabixFilePath)
-kits = parseKits(haplogroupFile, tb, hierarchy, panelMap)
+
+from Common import CommonMethods
+
+panelHier = CommonMethods.getPanelHier(panelHierFile)
+kits = parseKits(haplogroupFile, tb, hierarchy, panelMap, panelHier)
 
 headers = parseHeaders(kits)
 
 
 createCSVforRF(csvoutrffile, headers, kits)
-writePanelTree(panelMap, panelHierFile)
+
     
