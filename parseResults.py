@@ -37,7 +37,7 @@ def writeOutPosNegs(outFile):
                 for n in neg:
                     f.write("\t".join(["neg", theid, theid, n, "."]) + "\n")
                 for marker in strs:
-                    f.write("\t".join(["str", theid, theid, marker, strs[marker]]) + "\n")
+                    f.write("\t".join(["str", theid, theid, marker, strs[marker].replace("\t","")]) + "\n")
             else:
                 print(theid,"ignored because not enough STRs or positive SNPs")
     f.close()
