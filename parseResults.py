@@ -31,6 +31,7 @@ def writeOutPosNegs(outFile):
             neg = theKits[theid]["neg"]
             strs = theKits[theid]["str"]
             if hasEnoughInfoToProceed(pos, strs):
+                f.write("\t".join(["id", theid, theid, ".", "."]) + "\n")
                 for p in pos:
                     f.write("\t".join(["pos", theid, theid, p, "."]) + "\n")
                 for n in neg:

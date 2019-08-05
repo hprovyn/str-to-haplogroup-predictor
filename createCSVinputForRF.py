@@ -47,7 +47,7 @@ def createCSVforRF(outfile, headers, kits):
 
 
 import os
-def parseKits(haplogroupFile, datadir, hierarchy, panelMap):
+def parseKits(haplogroupFile, tb, hierarchy, panelMap):
     subs = {}
     kits = {}
     with open(haplogroupFile, 'r') as f:
@@ -67,20 +67,21 @@ def parseKits(haplogroupFile, datadir, hierarchy, panelMap):
                     kitToAdd["Haplogroup"] = "?"
             else:
                 kitToAdd["Haplogroup"] = "?"
-            allowableDownstream = getAllowableDownstream([], kitToAdd["Haplogroup"], panelMap, datadir, theid)
+            allowableDownstream = getAllowableDownstream([], kitToAdd["Haplogroup"], panelMap, tb, theid)
             kitToAdd["STRs"] = {}
-            with open(os.path.join(datadir,theid,"str")) as strfile:
-                strs = strfile.read().split(",")
-                for strallele in strs:
-                    (thestr, allele) = strallele.split("=")
-                    strtouse = thestr
-                    if thestr in subs:
-                        strtouse = subs[thestr]
-                    kitToAdd["STRs"][strtouse] = allele.replace("\\","")
-                    kitToAdd["allowableDownstream"] = allowableDownstream
+            strResults = tb.querys("str:" + theid + "-" + theid)
+            strs = []
+            for strResult in strResults:
+                strs.append(strResult[3] + "=" + strResult[4])
+            for strallele in strs:
+                (thestr, allele) = strallele.split("=")
+                strtouse = thestr
+                if thestr in subs:
+                    strtouse = subs[thestr]
+                kitToAdd["STRs"][strtouse] = allele.replace("\\","")
+                kitToAdd["allowableDownstream"] = allowableDownstream
             if len(kitToAdd["STRs"]) >= 15:
                 kits[theid] = kitToAdd
-            strfile.close()
     return kits
 
 def parseHeaders(kits):
@@ -200,7 +201,7 @@ def writePanelTree(panelMap, panelHierFile):
             w.write(p + "," + panelHier[p] + "\n")
     w.close()            
                 
-def getAllowableDownstream(negs, snpPredictedClade, panelMap, datadir, theid):
+def getAllowableDownstream(negs, snpPredictedClade, panelMap, tb, theid):
     allowableDownstream = list(panelMap.keys())
     if snpPredictedClade != "?":
         allowableDownstream = []
@@ -211,10 +212,9 @@ def getAllowableDownstream(negs, snpPredictedClade, panelMap, datadir, theid):
     if len(allowableDownstream) > 0:
         toremove = []
         negs = []
-        with open(os.path.join(datadir,theid,"neg")) as negfile:
-            negs = negfile.readline().split(",")
-            if '' in negs:
-                negs.remove('')
+        negResults = tb.querys("neg:" + theid + "-" + theid)
+        for negResult in negResults:
+            negs.append(negResult[3])
         for allowable in allowableDownstream:
             negated = False
             for upstreambranch in panelMap[allowable][0]:
@@ -254,7 +254,7 @@ import sys
 
 if len(sys.argv) > 1:
     treeFile = sys.argv[1]
-    datadir = sys.argv[2]
+    tabixFilePath = sys.argv[2]
     haplogroupFile = sys.argv[3]
     csvoutrffile = sys.argv[4]
     panelHierFile = sys.argv[5]
@@ -262,7 +262,9 @@ if len(sys.argv) > 1:
 thetreestuff = parseTreeJSON(treeFile)
 hierarchy = thetreestuff[1]
 
-kits = parseKits(haplogroupFile, datadir, hierarchy, panelMap)
+import tabix
+tb = tabix.open(tabixFilePath)
+kits = parseKits(haplogroupFile, tb, hierarchy, panelMap)
 
 headers = parseHeaders(kits)
 

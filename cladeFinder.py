@@ -271,19 +271,28 @@ snps = a[2]
 cladeMap = {}
 
 import tabix
-tb = tabix.load(tabixFilePath)
 
 #TODO get unique column values tabix query?
-ids = '1,2,3,8,11,49'.split(",")
 
+tb = tabix.open(tabixFilePath)
+idresults = tb.querys("id:1-9999999")
+ids = []
+for theid in idresults:
+    ids.append(theid[1])
 
 class ParallelCladeFind():
         
-    def findClade(self, tb, sampleId, hierarchy, toIgnore):
-        posResults = tb.query("pos", idint, idint)
-        positives = set([p[3] for p in posResults])
-        negResults = tb.query("neg", idint, idint)
-        negatives = set([p[3] for p in negResults])
+    def findClade(self, tb, sampleId, hierarchy, toIgnore, queue):
+        posResults = tb.querys("pos:" + sampleId + "-" + sampleId)
+        positives = []
+        for p in posResults:
+            positives.append(p[3])
+        positives = set(positives)
+        negResults = tb.querys("neg:" + sampleId + "-" + sampleId)
+        negatives = []
+        for n in negResults:
+            negatives.append(n[3])
+        negatives = set(negatives)
         for ign in toIgnore:
             if ign in positives:
                 positives.remove(ign)
@@ -292,28 +301,45 @@ class ParallelCladeFind():
         b = getRankedSolutions(positives, negatives, hierarchy)
         if len(b) > 0:
             print(sampleId, ' computed as ', b[0][1])
-            return (sampleId, b[0][1])
+            queue.put((sampleId, b[0][1]))
         else:
             print(sampleId, ' unable to compute')
-            return (sampleId, "?")
-
+            queue.put((sampleId, "?"))
 
 import multiprocessing
 
-processes = []
+
 allStart = time.time()
 
-for sampleId in ids:
-    idint = int(sampleId)
-    pcf = ParallelCladeFind()
-    p = multiprocessing.Process(target=pcf.findClade, args=(tb, sampleId, hierarchy, toIgnore))
-    p.start()
-    processes.append(p)
+def chunks(l, n):
+    """Yield successive n-sized chunks from l."""
+    for i in range(0, len(l), n):
+        yield l[i:i + n]
+
+idchunks = chunks(ids, 10)
 
 cladeMap = {}
-for p in processes:
-    p.join()
-    cladeMap[p[0]] = p[1]
+for idchunk in idchunks:
+    processes = []
+    queue = multiprocessing.Queue()
+    for sampleId in idchunk:
+        pcf = ParallelCladeFind()
+        p = multiprocessing.Process(target=pcf.findClade, args=(tb, sampleId, hierarchy, toIgnore, queue))
+        processes.append(p)
+        p.start()
+
+    rets = []
+    for p in processes:
+        ret = queue.get()
+        rets.append(ret)
+
+    for p in processes:
+        p.join()
+
+    for ret in rets:
+        cladeMap[ret[0]] = ret[1]
+
+
 
 allEnd = time.time()
 print('clade finder executed on ' + str(len(ids)) + ' ' + str(round((allEnd-allStart)/60,2)) + " minutes\n")
