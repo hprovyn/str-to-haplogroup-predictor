@@ -6,7 +6,7 @@ Created on Fri May 24 00:23:13 2019
 """
 
 import json
-
+import tabix
 
 hierarchy = {}
 snps = {}
@@ -44,11 +44,12 @@ def createCSVforRF(outfile, headers, kits):
         f.close()
 
 class ParallelGetKit():
-    def getKit(self, tb, theid, specificHg, panelMap, panelHier, queue):
+    def getKit(self, tabixFilePath, theid, specificHg, panelMap, panelHier, queue):
         kitToAdd = {}
-
         kitToAdd["Haplogroup"] = specificHg
         kitToAdd["STRs"] = {}
+        tb = tabix.open(tabixFilePath)
+
         strResults = tb.querys("str:" + theid + "-" + theid)
         for strResult in strResults:
             thestr = strResult[3]
@@ -70,7 +71,7 @@ import multiprocessing
 
 import time
             
-def parseKits(haplogroupFile, tb, hierarchy, panelMap, panelHier):
+def parseKits(haplogroupFile, tabixFilePath, hierarchy, panelMap, panelHier):
     kits = {}
     start = time.time()
     theids = []
@@ -107,7 +108,7 @@ def parseKits(haplogroupFile, tb, hierarchy, panelMap, panelHier):
         queue = multiprocessing.Queue()
         for j in range(len(idChunk)):
             pgk = ParallelGetKit()
-            p = multiprocessing.Process(target=pgk.getKit, args=(tb, idChunk[j], mostSpecificPanels[cladeChunk[j]], panelMap, panelHier, queue))
+            p = multiprocessing.Process(target=pgk.getKit, args=(tabixFilePath, idChunk[j], mostSpecificPanels[cladeChunk[j]], panelMap, panelHier, queue))
             p.start()
             processes.append(p)
         rets = []
@@ -121,7 +122,7 @@ def parseKits(haplogroupFile, tb, hierarchy, panelMap, panelHier):
             	kits[ret[0]] = ret[1]
     
     end = time.time()
-    print("elapsed time processing specific and allowable downstream SNPs" + str(round((end - start) / 60,2)) + " min")
+    print("elapsed time processing specific and allowable downstream SNPs for " + len(theids) + " samples " + str(round((end - start) / 60,2)) + " min")
     print(str(round((end - start) / len(theids),2)) + " sec per sample")
 
     return kits
@@ -355,13 +356,11 @@ hierarchy = thetreestuff[1]
 
 writePanelTree(panelMap, panelHierFile)
 
-import tabix
-tb = tabix.open(tabixFilePath)
 
 from Common import CommonMethods
 
 panelHier = CommonMethods.getPanelHier(panelHierFile)
-kits = parseKits(haplogroupFile, tb, hierarchy, panelMap, panelHier)
+kits = parseKits(haplogroupFile, tabixFilePath, hierarchy, panelMap, panelHier)
 
 headers = parseHeaders(kits)
 
