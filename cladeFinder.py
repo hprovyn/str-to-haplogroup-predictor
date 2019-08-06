@@ -27,6 +27,7 @@ if len(sys.argv) > 1:
     treeFile = sys.argv[1]
     tabixFilePath = sys.argv[2]
     outputFile = sys.argv[3]
+    maxThreads = int(sys.argv[4])
  
 def parseFile(file):
     fr = open(file, 'r')
@@ -316,7 +317,7 @@ def chunks(l, n):
     for i in range(0, len(l), n):
         yield l[i:i + n]
 
-idchunks = chunks(ids, 10)
+idchunks = chunks(ids, maxThreads)
 
 cladeMap = {}
 for idchunk in idchunks:

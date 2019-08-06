@@ -71,7 +71,7 @@ import multiprocessing
 
 import time
             
-def parseKits(haplogroupFile, tabixFilePath, hierarchy, panelMap, panelHier):
+def parseKits(haplogroupFile, tabixFilePath, hierarchy, panelMap, panelHier, maxThreads):
     kits = {}
     start = time.time()
     theids = []
@@ -98,8 +98,8 @@ def parseKits(haplogroupFile, tabixFilePath, hierarchy, panelMap, panelHier):
         else:
             mostSpecificPanels[hg] = "?"
     
-    idChunks = list(chunks(theids, 10))
-    cladeChunks = list(chunks(thehgs, 10))
+    idChunks = list(chunks(theids, maxThreads))
+    cladeChunks = list(chunks(thehgs, maxThreads))
     for i in range(len(idChunks)):
         idChunk = idChunks[i]
         cladeChunk = cladeChunks[i]
@@ -350,6 +350,7 @@ if len(sys.argv) > 1:
     haplogroupFile = sys.argv[3]
     csvoutrffile = sys.argv[4]
     panelHierFile = sys.argv[5]
+    maxThreads = int(sys.argv[6])
     
 thetreestuff = parseTreeJSON(treeFile)
 hierarchy = thetreestuff[1]
@@ -360,7 +361,7 @@ writePanelTree(panelMap, panelHierFile)
 from Common import CommonMethods
 
 panelHier = CommonMethods.getPanelHier(panelHierFile)
-kits = parseKits(haplogroupFile, tabixFilePath, hierarchy, panelMap, panelHier)
+kits = parseKits(haplogroupFile, tabixFilePath, hierarchy, panelMap, panelHier, maxThreads)
 
 headers = parseHeaders(kits)
 
