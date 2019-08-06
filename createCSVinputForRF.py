@@ -122,7 +122,7 @@ def parseKits(haplogroupFile, tabixFilePath, hierarchy, panelMap, panelHier):
             	kits[ret[0]] = ret[1]
     
     end = time.time()
-    print("elapsed time processing specific and allowable downstream SNPs for " + len(theids) + " samples " + str(round((end - start) / 60,2)) + " min")
+    print("elapsed time processing specific and allowable downstream SNPs for " + str(len(theids)) + " samples " + str(round((end - start) / 60,2)) + " min")
     print(str(round((end - start) / len(theids),2)) + " sec per sample")
 
     return kits
