@@ -44,32 +44,19 @@ def createCSVforRF(outfile, headers, kits):
         f.close()
 
 class ParallelGetKit():
-    def getKit(self, tb, theid, clade, panelMap, queue):
+    def getKit(self, tb, theid, specificHg, panelMap, panelHier, queue):
         kitToAdd = {}
 
-        if clade != "?\n":
-            hg = clade.replace("\n","") #TODO keep * for A super panel
-            panels = getPanels(hg, panelMap)
-            if len(panels) > 0:
-                print(panels)
-                panel = getMostSpecificPanel(panels, panelMap)
-                print(theid, 'most specific', panel, 'for', clade)                    
-                kitToAdd["Haplogroup"] = panel
-            else:
-                kitToAdd["Haplogroup"] = "?"
-        else:
-            kitToAdd["Haplogroup"] = "?"
-        allowableDownstream = getAllowableDownstream([], kitToAdd["Haplogroup"], panelMap, tb, theid)
+        kitToAdd["Haplogroup"] = specificHg
         kitToAdd["STRs"] = {}
         strResults = tb.querys("str:" + theid + "-" + theid)
-        strs = []
         for strResult in strResults:
-            strs.append(strResult[3] + "=" + strResult[4])
-        for strallele in strs:
-            (thestr, allele) = strallele.split("=")
-            kitToAdd["STRs"][thestr] = allele.replace("\\","")
-            kitToAdd["allowableDownstream"] = allowableDownstream
+            thestr = strResult[3]
+            allele = strResult[4].replace("\\","")         
+            kitToAdd["STRs"][thestr] = allele
         if len(kitToAdd["STRs"]) >= 15:
+            kitToAdd["allowableDownstream"] = getAllowableDownstream([], kitToAdd["Haplogroup"], panelMap, tb, theid, panelHier)
+
             queue.put((theid, kitToAdd))
         else:
             queue.put((0,0))
@@ -84,56 +71,59 @@ import multiprocessing
 import time
             
 def parseKits(haplogroupFile, tb, hierarchy, panelMap, panelHier):
-    subs = {}
     kits = {}
     start = time.time()
+    theids = []
+    thehgs = []
     with open(haplogroupFile, 'r') as f:
-        theids = []
-        thehgs = []
         for line in f.readlines():
             (theid, clade) = line.split(",")
             thehg = clade.replace("\n","")
             if thehg != "?":
                 theids.append(theid)
                 thehgs.append(thehg)
-        f.close()
-        mostSpecificPanels = {}
-        for hg in set(thehgs):
-            if hg != "?":
-                panels = getPanels(hg, panelMap)
-                if len(panels) > 0:
-                    #print(panels)
-                    panel = getMostSpecificPanel(panels, panelMap)
-                    print('most specific', panel, 'for', hg)                    
-                    mostSpecificPanels[hg] = panel
-                else:
-                    mostSpecificPanels[hg] = "?"
+    f.close()
+    mostSpecificPanels = {}
+    for hg in set(thehgs):
+        if hg != "?":
+            panels = getPanels(hg, panelMap)
+            if len(panels) > 0:
+                #print(panels)
+                panel = getMostSpecificPanel(panels, panelMap)
+                print('most specific', panel, 'for', hg)                    
+                mostSpecificPanels[hg] = panel
             else:
                 mostSpecificPanels[hg] = "?"
-        for i in range(len(thehgs)):
-            print('processing' + theids[i])
-            hg = thehgs[i]
-            theid = theids[i]
-            kitToAdd = {}
-
-            kitToAdd["Haplogroup"] = mostSpecificPanels[hg]
-            allowableDownstream = getAllowableDownstream([], kitToAdd["Haplogroup"], panelMap, tb, theid, panelHier)
-            kitToAdd["STRs"] = {}
-            strResults = tb.querys("str:" + theid + "-" + theid)
-            strs = []
-            for strResult in strResults:
-                strs.append(strResult[3] + "=" + strResult[4])
-            for strallele in strs:
-                (thestr, allele) = strallele.split("=")
-                strtouse = thestr
-                if thestr in subs:
-                    strtouse = subs[thestr]
-                kitToAdd["STRs"][strtouse] = allele.replace("\\","")
-                kitToAdd["allowableDownstream"] = allowableDownstream
-            if len(kitToAdd["STRs"]) >= 15:
-                kits[theid] = kitToAdd
+        else:
+            mostSpecificPanels[hg] = "?"
+    
+    idChunks = list(chunks(theids, 10))
+    cladeChunks = list(chunks(thehgs, 10))
+    for i in range(len(idChunks)):
+        idChunk = idChunks[i]
+        cladeChunk = cladeChunks[i]
+        print (idChunk, cladeChunk)
+        processes = []
+        queue = multiprocessing.Queue()
+        for j in range(len(idChunk)):
+            pgk = ParallelGetKit()
+            p = multiprocessing.Process(target=pgk.getKit, args=(tb, idChunk[j], mostSpecificPanels[cladeChunk[j]], panelMap, panelHier, queue))
+            p.start()
+            processes.append(p)
+        rets = []
+        for p in processes:
+            ret = queue.get()
+            rets.append(ret)
+        for p in processes:
+            p.join()
+        for ret in rets:
+            if ret[0] != 0:
+            	kits[ret[0]] = ret[1]
+    
     end = time.time()
     print("elapsed time processing specific and allowable downstream SNPs" + str(round((end - start) / 60,2)) + " min")
+    print(str(round((end - start) / len(theids),2)) + " sec per sample")
+
     return kits
 
 def parseKitsMulti(haplogroupFile, tb, hierarchy, panelMap):
