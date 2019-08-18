@@ -8,9 +8,8 @@ PATH=$PATH:$pythonPath
 
 rfPredict_py="$pythonScriptsDir${pathSeparator}RF_predict.py"
 
-dataDir="$experimentDir${pathSeparator}data"
-panelHierarchyFile="$experimentDir${pathSeparator}panelHierarchy.csv"
-predictionPolicyFileStem="$experimentDir${pathSeparator}predictionPolicy"
-modelPickleFileStem="$experimentDir${pathSeparator}model"
+panelHierarchyFile="$predictionDir${pathSeparator}panelHierarchy.csv"
+predictionPolicyFileStem="$predictionDir${pathSeparator}predictionPolicy"
+modelPickleFileStem="$predictionDir${pathSeparator}model"
 
-python "$rfPredict_py" "$dataDir" "$panelHierarchyFile" "$predictionPolicyFileStem" "$modelPickleFileStem" "$percentMissingSTRThreshold" $1
+python "$rfPredict_py" "$panelHierarchyFile" "$predictionPolicyFileStem" "$modelPickleFileStem" "$percentMissingSTRThreshold" $1

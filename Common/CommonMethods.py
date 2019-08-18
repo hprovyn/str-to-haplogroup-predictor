@@ -530,15 +530,8 @@ def getPolicyFile(stem, modes):
 
 import os
     
-def predict(dataDir, sampleId, panelHierarchy, policyFileStem, modelPickleFileStem, percentMissingSTRThreshold):
-    if "," in sampleId:
-        queryAlleleArray = sampleId.split(",")
-        outfile = os.path.join(dataDir, "prediction")
-    else:
-        predfile = os.path.join(dataDir,sampleId,"str")
-        queryAlleleArray = getAlleleArrayFromFile(predfile)
-        outfile = os.path.join(dataDir,sampleId,"prediction")
-        
+def predict(strAlleleString, panelHierarchy, policyFileStem, modelPickleFileStem, percentMissingSTRThreshold):
+    queryAlleleArray = strAlleleString.split(",")
     rejected = True
     modesIdx = 0
     while rejected and modesIdx < len(modeCombos):
@@ -550,9 +543,9 @@ def predict(dataDir, sampleId, panelHierarchy, policyFileStem, modelPickleFileSt
             rejected = False
         modesIdx += 1
     print(modesIncluded, strs, dubSTRs, quadSTRs)
-    return loadModelAndPredict(predstrs, panelHierarchy, modesIncluded, policyFileStem, modelPickleFileStem, outfile)
+    return loadModelAndPredict(predstrs, panelHierarchy, modesIncluded, policyFileStem, modelPickleFileStem)
     
-def loadModelAndPredict(predstrs, panelHierarchy, modesIncluded, policyFileStem, modelPickleFileStem, outfile):
+def loadModelAndPredict(predstrs, panelHierarchy, modesIncluded, policyFileStem, modelPickleFileStem):
     if predstrs == None:
         print("Rejected, not enough STRs in sample to predict")
         return "Rejected, not enough STRs in sample to predict"
