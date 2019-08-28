@@ -154,7 +154,7 @@ def getRefined(cutoff, thekits, theids, thehgs, uncertainKits, uncertainIds, unc
     
 from sklearn.ensemble import RandomForestClassifier
 
-clf = RandomForestClassifier(n_estimators=300, max_depth=7,random_state=0,class_weight="balanced")
+
 
 def getTrainingSamplesFromFile(fil, modesIncluded, percentMissingSTRThreshold):
     thekits = []
@@ -199,23 +199,6 @@ def createTrainTest(x, y, ids):
     return (xT, yT, xH, yH, correctOrderIdsHoldout)
 
 import time
-
-def experiment(infile, modesIncluded, cutoff, outfile, iterations):
-    (thekits, theids, thehgs, uncertainKits, uncertainIds, uncertainAllowable, rejected) = getTrainingSamplesFromFile(infile, modesIncluded)
-    if cutoff:
-        getRefined(cutoff, thekits, theids, thehgs, uncertainKits, uncertainIds, uncertainAllowable)
-    (x, ids, y) = excludeQuestionMarks(thekits, theids, thehgs)
-    accuracySum = 0
-    for i in range(iterations):
-        (xT, yT, xH, yH, idsToHoldout) = createTrainTest(x, y, ids)
-        clf.fit(xT, yT)
-        start = time.time()
-        preds = clf.predict(xH)
-        end = time.time()
-        (accuracy, classAccuracy, truthMatrix, wronglyPredictedIdsAs) = score(preds, yH, idsToHoldout)
-        accuracySum += accuracy
-    writeResults(outfile, end - start, y, yH, x, accuracySum / iterations, classAccuracy, truthMatrix, wronglyPredictedIdsAs)
-
 
 def fromPredProbaGetPolicyValues(preds, predProba):
     policyValues = []
@@ -338,13 +321,15 @@ import pickle
 import multiprocessing
     
 class Experiment:
-    def parallelExperiment(self, infile, modesIncluded, panelHier, policyFileStem, modelPickleFileStem, utilityWeights, experimentMapFileStem, percentMissingSTRThreshold):            
+    def parallelExperiment(self, infile, modesIncluded, panelHier, policyFileStem, modelPickleFileStem, utilityWeights, experimentMapFileStem, percentMissingSTRThreshold, rfEstimators, rfMaxDepth):            
         (thekits, theids, thehgs, rejected) = getTrainingSamplesFromFile(infile, modesIncluded, percentMissingSTRThreshold)
         #if cutoff:
         #    getRefined(cutoff, thekits, theids, thehgs, uncertainKits, uncertainIds, uncertainAllowable)
         (x, ids, y) = excludeQuestionMarks(thekits, theids, thehgs)
         #accuracySum = 0
         (xT, yT, xH, yH, idsToHoldout) = createTrainTest(x, y, ids)
+        clf = RandomForestClassifier(n_estimators=rfEstimators, max_depth=rfMaxDepth,random_state=0,class_weight="balanced")
+
         clf.fit(xT, yT)
         #start = time.time()
         preds = clf.predict(x)
@@ -403,18 +388,25 @@ class Experiment:
             policyB = expMap[-1][1]
         
         persistPolicy(policyA, policyB, getPolicyFile(policyFileStem, modesIncluded))
+        createSpecificModelMetadata(modesIncluded, xT, xH, yT, modelPickleFileStem + "_" + modesIncluded + "_metadata")
 
-def experimentErrorPolicy(infile, outfile, panelHierFile, policyFileStem, modelPickleFileStem, utilityWeights, experimentMapFileStem, percentMissingSTRThreshold):
+
+def experimentErrorPolicy(infile, outfile, panelHierFile, policyFileStem, modelPickleFileStem, utilityWeights, experimentMapFileStem, percentMissingSTRThreshold, rfEstimators, rfMaxDepth):
     panelHier = getPanelHier(panelHierFile)
         
     processes = []
     for modesIncluded in modeCombos:
         e = Experiment()
-        p = multiprocessing.Process(target=e.parallelExperiment, args=(infile, modesIncluded, panelHier, policyFileStem, modelPickleFileStem, utilityWeights, experimentMapFileStem, percentMissingSTRThreshold))
-        p.start()        
+        p = multiprocessing.Process(target=e.parallelExperiment, args=(infile, modesIncluded, panelHier, policyFileStem, modelPickleFileStem, utilityWeights, experimentMapFileStem, percentMissingSTRThreshold, rfEstimators, rfMaxDepth))
+        p.start()
         processes.append(p)
     for p in processes:
         p.join()
+    k = pd.read_csv(infile)
+    samples = len(k["Haplogroup"])
+    hgs = len(set(k["Haplogroup"]))
+    createGeneralModelMetadata(samples, hgs, rfEstimators, rfMaxDepth, modelPickleFileStem + "_general_metadata")
+    
     
 def getAlleleArrayFromFile(fil):
     with open(fil, "r") as f:
@@ -581,15 +573,7 @@ def loadModelAndPredict(predstrs, panelHierarchy, modesIncluded, policyFileStem,
         predprobaclass.sort(key=sortPredProba)
         predprobaclass.reverse()
         print(predprobaclass)
-# =============================================================================
-#         with open(outfile, "w") as w:
-#             w.write("STR sets used," + modesIncluded + "\n")
-#             w.write("model load seconds," + str(round((end - start),3)) + "\n")
-#             for p in predprobaclass:
-#                 w.write(p[1] + "," + str(round(p[0],4)) + "\n")
-#         w.close()
-# =============================================================================
-        print(getPredictedHTML(refined[0], haplogroupClassConfigPath) + "<br><br>" + createHTML(refined, predprobaclass))
+        print(getPredictedHTML(refined[0], haplogroupClassConfigPath) + "<br><br>" + createHTML(refined, predprobaclass) + "<br><br>" + getSpecificModelMetadata(modelPickleFileStem, modesIncluded))
         return refined[0]
 
 def createHTML(refined, predprobaclass):
@@ -612,8 +596,6 @@ def excludeQuestionMarks(thekits, theids, thehgs):
             signals.append(thehgs[i])
     return (removedNonesSTRs, removedNonesIDs, signals)
     
-def train(x, y):
-    clf.fit(x, y)
     
 def score(preds, truth, ids):
     classAccuracy = {}
@@ -668,3 +650,24 @@ def writeResults(fil, trainTime, signals, testClasses, removedNonesSTRs, accurac
                 truthclass.sort(key=sortClassAccuracy)
                 for j in range(len(truthclass)):
                     w.write(classAcc[i][0] + " wrongly predicted as " + truthclass[j][0] + ", " + str(round(truthclass[j][1] / iterations,3)) + "," + " ".join(truthclass[j][2]) + "\n")
+
+def createGeneralModelMetadata(samples, classes, rfEstimators, rfMaxDepth, generalModelMetadataFile):
+    thehtml = "Training Data:<br><br>"
+    thehtml += "<table border=\"1\"><tr><td>Samples</td><td>" + str(samples) + "</td></tr><tr><td>Haplogroups</td><td>" + str(classes) + "</td></tr></table><br><br>"
+    thehtml += "Random Forest Model Parameters:<br><br>"
+    thehtml += "<table border=\"1\"><tr><td>Estimators</td><td>" + str(rfEstimators) + "</td></tr><tr><td>Max Depth</td><td>" + str(rfMaxDepth) + "</td></tr></table>"
+    #stub for neural net    
+    with open(generalModelMetadataFile, "w") as w:
+        w.write(thehtml)
+    w.close()
+
+def createSpecificModelMetadata(modesIncluded, train, test, classesTrainedOn, specificModelMetadataFile):
+    thehtml = "<table border=\"1\"><tr><td>Training Samples</td><td>" + str(len(train)) + "</td></tr><tr><td>Test Samples</td><td>" + str(len(test)) + "</td></tr><tr><td>Haplogroup Classes Trained</td><td>" + str(len(set(classesTrainedOn))) + "</td></tr></table>"
+    with open(specificModelMetadataFile, "w") as w:
+        w.write(thehtml)
+    w.close()
+    
+def getSpecificModelMetadata(modelPickleStem, modesIncluded):
+    with open(modelPickleStem + "_" + modesIncluded + "_metadata", "r") as r:
+        return r.readline()
+    r.close()

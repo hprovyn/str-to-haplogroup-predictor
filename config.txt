@@ -14,3 +14,5 @@ utilityCorrect=0
 percentMissingSTRThreshold=20
 cladeFinderMaxThreads=20
 createCSVinputMaxThreads=15
+randomForestEstimators=300
+randomForestMaxDepth=7
