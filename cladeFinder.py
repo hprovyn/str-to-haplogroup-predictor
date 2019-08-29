@@ -287,7 +287,8 @@ for theid in idresults:
 
 class ParallelCladeFind():
         
-    def findClade(self, tb, sampleId, hierarchy, toIgnore, queue):
+    def findClade(self, tabixFilePath, sampleId, hierarchy, toIgnore, queue):
+        tb = tabix.open(tabixFilePath)
         posResults = tb.querys("pos:" + sampleId + "-" + sampleId)
         positives = []
         for p in posResults:
@@ -332,7 +333,7 @@ for idchunk in idchunks:
     queue = multiprocessing.Queue()
     for sampleId in idchunk:
         pcf = ParallelCladeFind()
-        p = multiprocessing.Process(target=pcf.findClade, args=(tb, sampleId, hierarchy, toIgnore, queue))
+        p = multiprocessing.Process(target=pcf.findClade, args=(tabixFilePath, sampleId, hierarchy, toIgnore, queue))
         processes.append(p)
         p.start()
 
