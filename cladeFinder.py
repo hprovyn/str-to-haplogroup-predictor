@@ -31,14 +31,18 @@ if len(sys.argv) > 1:
  
 def parseFile(file):
     fr = open(file, 'r')
-    return fr.readline().split(",")
+    parsed = fr.readline().split(",")
+    fr.close()
+    return parsed
 
 hierarchy = {}
 childMap = {}
 snps = {}
 
 def parseTreeJSON(fil):
-    root = json.load(open(fil))
+    thefile = open(fil)
+    root = json.load(thefile)
+    thefile.close()
     recurseTreeJson(root, hierarchy, snps)
     return (root["id"], hierarchy, snps)
 
