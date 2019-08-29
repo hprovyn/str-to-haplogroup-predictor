@@ -425,7 +425,12 @@ def validateSTRQuery(strarray):
     for thestr in strarray:
         thesplit = thestr.split("=")
         if len(thesplit) == 1:
-            return "STR query error: " + thestr + " needs to be in format $ALLELE=$VALUE"
+            return "STR query format error: '" + thestr + "' needs to be in format $ALLELE=$VALUE"
+        for split in thesplit[1].split("-"):
+            try:
+                float(split)
+            except ValueError:
+                return "STR query format error: '" + thestr + "', allele value '" + split + "' not a float"
     return None
     
 def getValuesForPredictionFromAlleleArray(strmap, strs, dubSTRs, quadSTRs, percentMissingSTRThreshold):
@@ -512,6 +517,7 @@ def predict(strAlleleString, panelHierarchy, policyFileStem, modelPickleFileStem
     queryAlleleArray = strAlleleString.split(",")
     validationMessage = validateSTRQuery(queryAlleleArray)
     if validationMessage != None:
+        print(validationMessage)
         return validationMessage
     else:
         strmap = getSTRmap(queryAlleleArray)
