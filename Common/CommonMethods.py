@@ -80,70 +80,44 @@ def is_float(value):
     except:
         return False
     
-def addKits(strs, dubSTRs, quadSTRs, ks, ids, idsToKeep, hgs, allowable, thekits, theids, thehgs, uncertainKits, uncertainIds, uncertainAllowable, rejected):
+    
+def convertSTRrowToMap(ks, sampleIdx, strs, dubSTRs, quadSTRs):
+    strmap = {}
+    for thestr in set(strs) | set(dubSTRs) | set(quadSTRs):
+        strmap[thestr] = ks[thestr][sampleIdx]
+    return strmap
+
+def addKits(strs, dubSTRs, quadSTRs, ks, ids, idsToKeep, hgs, thekits, theids, thehgs, rejected, percentMissingSTRThreshold):
         
     for i in range(len(ids)):
         #if i % 20 == 0:
             #print(i, "/", len(ids))
+        
         thehg = hgs[i].strip(" ")
-        if str(ks[strs[0]][i])  != "nan":
-            thiskit = []
-            ignore = False
-            thisId = str(ids[i]).strip(" ")
-            if len(idsToKeep) > 0 and thisId not in idsToKeep:
-                ignore = True
-            for STR in strs:
-                if str(ks[STR][i]) == "nan" or is_float(ks[STR][i]) == False:
-                    #print("ignored", ks[STR][i])
-                    ignore = True
-                else:    
-                    thiskit.append(float(ks[STR][i]))
-            for STR in dubSTRs:
-                splits = str(ks[STR][i]).split("-")
-                sl = len(splits)
-                if sl < 2:
-                    #print("ignored", ks[STR][i])
-                    ignore = True
-                else:
-                    thiskit.append(float(splits[0]))    
-                    thiskit.append(float(splits[sl-1]))
-                    thiskit.append(float(sl))
-            for STR in quadSTRs:
-                splits = str(ks[STR][i]).split("-")
-                sl = len(splits)
-                if sl < 4:
-                    ignore = True
-                else:
-                    thiskit.append(float(splits[0]))
-                    thiskit.append(float(splits[1]))
-                    thiskit.append(float(splits[sl-2]))
-                    thiskit.append(float(splits[sl-1]))
-                    thiskit.append(float(sl))
+        thisId = ids[i]
 
-            if not ignore:
-                if thehg != "?":
-                    thekits.append(np.array(thiskit))#[0:thelength])
-                    theids.append(str(thisId))
-                    thehgs.append(thehg)
-                if str(allowable[i]) != "nan":
-                    uncertainKits.append(np.array(thiskit))
-                    uncertainIds.append(str(thisId))
-                    uncertainAllowable.append(allowable[i].split(":"))
-                #print('added', ids[i],thiskit)
-            else:
-                rejected[ids[i]] = thiskit
-                #print('ignored', ids[i],thiskit)
+        if thehg == "?":
+            rejected[(thisId)] = "unknown haplogroup"
         else:
-            rejected[ids[i]] = "TOTAL REJECT " + str(ks[strs[0]][i])
+            strmap = convertSTRrowToMap(ks, i, strs, dubSTRs, quadSTRs)
+            modelInputFormattedSTRs = getValuesForPredictionFromAlleleArray(strmap, strs, dubSTRs, quadSTRs, percentMissingSTRThreshold)
+            if modelInputFormattedSTRs != None:
+            
+                thekits.append(np.array(modelInputFormattedSTRs))#[0:thelength])
+                theids.append(str(thisId))
+                thehgs.append(thehg)
+
+            else:
+                rejected[str(thisId)] = strmap
          
 import pandas as pd
-def parseTrainCSV(strs, dubSTRs, quadSTRs, fil, modesIncluded, thekits, theids, thehgs, uncertainKits, uncertainIds, uncertainAllowables, rejected):
+def parseTrainCSV(strs, dubSTRs, quadSTRs, fil, modesIncluded, thekits, theids, thehgs, rejected, percentMissingSTRThreshold):
     k = pd.read_csv(fil)    
     ids = k["Kit Number"]
     hgs = k["Haplogroup"]
-    allowable = k["Allowable Downstream"]
+    #allowable = k["Allowable Downstream"]
     
-    addKits(strs, dubSTRs, quadSTRs, k, ids, [], hgs, allowable, thekits, theids, thehgs, uncertainKits, uncertainIds, uncertainAllowables, rejected)
+    addKits(strs, dubSTRs, quadSTRs, k, ids, [], hgs, thekits, theids, thehgs, rejected, percentMissingSTRThreshold)
 
 def getClosestCutoff(uncertainidx, cutoff, thekits, thehgs, uncertainKits, uncertainAllowable):
     mindist = 100
@@ -182,19 +156,16 @@ from sklearn.ensemble import RandomForestClassifier
 
 clf = RandomForestClassifier(n_estimators=300, max_depth=7,random_state=0,class_weight="balanced")
 
-def getTrainingSamplesFromFile(fil, modesIncluded):
+def getTrainingSamplesFromFile(fil, modesIncluded, percentMissingSTRThreshold):
     thekits = []
     theids = []
     thehgs = []
     
-    uncertainKits = []
-    uncertainIds = []
-    uncertainAllowable = []
     rejected = {}
     (strs, dubSTRs, quadSTRs) = getSTRLabelsFromSets(modesIncluded)
 
-    parseTrainCSV(strs, dubSTRs, quadSTRs, fil, modesIncluded, thekits, theids, thehgs, uncertainKits, uncertainIds, uncertainAllowable, rejected)
-    return (thekits, theids, thehgs, uncertainKits, uncertainIds, uncertainAllowable, rejected)
+    parseTrainCSV(strs, dubSTRs, quadSTRs, fil, modesIncluded, thekits, theids, thehgs, rejected, percentMissingSTRThreshold)
+    return (thekits, theids, thehgs, rejected)
 
 import random
 
@@ -367,8 +338,8 @@ import pickle
 import multiprocessing
     
 class Experiment:
-    def parallelExperiment(self, infile, modesIncluded, panelHier, policyFileStem, modelPickleFileStem, utilityWeights, experimentMapFileStem):            
-        (thekits, theids, thehgs, uncertainKits, uncertainIds, uncertainAllowable, rejected) = getTrainingSamplesFromFile(infile, modesIncluded)
+    def parallelExperiment(self, infile, modesIncluded, panelHier, policyFileStem, modelPickleFileStem, utilityWeights, experimentMapFileStem, percentMissingSTRThreshold):            
+        (thekits, theids, thehgs, rejected) = getTrainingSamplesFromFile(infile, modesIncluded, percentMissingSTRThreshold)
         #if cutoff:
         #    getRefined(cutoff, thekits, theids, thehgs, uncertainKits, uncertainIds, uncertainAllowable)
         (x, ids, y) = excludeQuestionMarks(thekits, theids, thehgs)
@@ -433,13 +404,13 @@ class Experiment:
         
         persistPolicy(policyA, policyB, getPolicyFile(policyFileStem, modesIncluded))
 
-def experimentErrorPolicy(infile, outfile, panelHierFile, policyFileStem, modelPickleFileStem, utilityWeights, experimentMapFileStem):
+def experimentErrorPolicy(infile, outfile, panelHierFile, policyFileStem, modelPickleFileStem, utilityWeights, experimentMapFileStem, percentMissingSTRThreshold):
     panelHier = getPanelHier(panelHierFile)
         
     processes = []
     for modesIncluded in modeCombos:
         e = Experiment()
-        p = multiprocessing.Process(target=e.parallelExperiment, args=(infile, modesIncluded, panelHier, policyFileStem, modelPickleFileStem, utilityWeights, experimentMapFileStem))
+        p = multiprocessing.Process(target=e.parallelExperiment, args=(infile, modesIncluded, panelHier, policyFileStem, modelPickleFileStem, utilityWeights, experimentMapFileStem, percentMissingSTRThreshold))
         p.start()
         processes.append(p)
     for p in processes:
@@ -450,13 +421,14 @@ def getAlleleArrayFromFile(fil):
         filestrs = f.readline().strip("/n").split(",")
         return filestrs
 
-def getValuesForPredictionFromAlleleArray(strarray, strs, dubSTRs, quadSTRs, percentMissingSTRThreshold):
-    strmap = {}
+def validateSTRQuery(strarray):
     for thestr in strarray:
-        (strname, strval) = thestr.split("=")
-        strmap[strname] = strval
-    print(strmap)
-    print(len(strmap.keys()))
+        thesplit = thestr.split("=")
+        if len(thesplit) == 1:
+            return "STR query error: " + thestr + " needs to be in format $ALLELE=$VALUE"
+    return None
+    
+def getValuesForPredictionFromAlleleArray(strmap, strs, dubSTRs, quadSTRs, percentMissingSTRThreshold):
     thiskit = []
     missing = 0
     for STR in strs:
@@ -528,22 +500,36 @@ def getModesPklFile(stem, modes):
 def getPolicyFile(stem, modes):
     return stem + "_" + modes + ".csv"
 
+def getSTRmap(queryAlleleArray):
+    strmap = {}
+    for thestr in queryAlleleArray:
+        (strname, strval) = thestr.split("=")
+        strmap[strname] = strval
+    print(strmap)
+    print(len(strmap.keys()))
+    return strmap
+
 import os
     
 def predict(strAlleleString, panelHierarchy, policyFileStem, modelPickleFileStem, percentMissingSTRThreshold):
     queryAlleleArray = strAlleleString.split(",")
-    rejected = True
-    modesIdx = 0
-    while rejected and modesIdx < len(modeCombos):
-        modesIncluded = modeCombos[modesIdx]
-        (strs, dubSTRs, quadSTRs) = getSTRLabelsFromSets(modesIncluded)
-        print(modesIncluded)
-        predstrs = getValuesForPredictionFromAlleleArray(queryAlleleArray, strs, dubSTRs, quadSTRs, percentMissingSTRThreshold)
-        if predstrs != None:
-            rejected = False
-        modesIdx += 1
-    print(modesIncluded, strs, dubSTRs, quadSTRs)
-    return loadModelAndPredict(predstrs, panelHierarchy, modesIncluded, policyFileStem, modelPickleFileStem)
+    validationMessage = validateSTRQuery(queryAlleleArray)
+    if validationMessage != None:
+        return validationMessage
+    else:
+        strmap = getSTRmap(queryAlleleArray)
+        rejected = True
+        modesIdx = 0
+        while rejected and modesIdx < len(modeCombos):
+            modesIncluded = modeCombos[modesIdx]
+            (strs, dubSTRs, quadSTRs) = getSTRLabelsFromSets(modesIncluded)
+            print(modesIncluded)
+            predstrs = getValuesForPredictionFromAlleleArray(strmap, strs, dubSTRs, quadSTRs, percentMissingSTRThreshold)
+            if predstrs != None:
+                rejected = False
+            modesIdx += 1
+        print(modesIncluded, strs, dubSTRs, quadSTRs)
+        return loadModelAndPredict(predstrs, panelHierarchy, modesIncluded, policyFileStem, modelPickleFileStem)
     
 def loadModelAndPredict(predstrs, panelHierarchy, modesIncluded, policyFileStem, modelPickleFileStem):
     if predstrs == None:

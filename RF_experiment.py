@@ -29,6 +29,7 @@ if len(sys.argv) > 1:
     else:
         utilityWeights = [utilityUnderSpecificityError, utilityOverSpecificityError, utilityCompletelyWrongError, utilityCorrect]
     experimentMapFileStem = sys.argv[10]
+    percentMissingSTRThreshold = float(sys.argv[11])/100
 
 if __name__ ==  '__main__':
-    CommonMethods.experimentErrorPolicy(trainFile, experimentOutputFile, panelHierarchyFile, policyFileStem, modelPickleFileStem, utilityWeights, experimentMapFileStem)
+    CommonMethods.experimentErrorPolicy(trainFile, experimentOutputFile, panelHierarchyFile, policyFileStem, modelPickleFileStem, utilityWeights, experimentMapFileStem, percentMissingSTRThreshold)
