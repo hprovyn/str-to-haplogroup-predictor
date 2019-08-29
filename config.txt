@@ -12,4 +12,4 @@ utilityCompletelyWrongError=0
 utilityCorrect=0
 percentMissingSTRThreshold=20
 cladeFinderMaxThreads=20
-createCSVinputMaxThreads=25
+createCSVinputMaxThreads=15
