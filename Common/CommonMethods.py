@@ -454,7 +454,6 @@ def getValuesForPredictionFromAlleleArray(strmap, strs, dubSTRs, quadSTRs, perce
                 for i in range(sl):
                     thiskit.append(float(splits[i]))
                 thiskit.append(float(sl))
-                print('too few palindromes', STR)
             else:
                 thiskit.append(float(splits[0]))    
                 thiskit.append(float(splits[sl-1]))
@@ -477,7 +476,6 @@ def getValuesForPredictionFromAlleleArray(strmap, strs, dubSTRs, quadSTRs, perce
                 for i in range(sl):
                     thiskit.append(float(splits[i]))
                 thiskit.append(float(sl))
-                print('too few palindromes', STR)
             else:
                 thiskit.append(float(splits[0]))
                 thiskit.append(float(splits[1]))
@@ -485,7 +483,6 @@ def getValuesForPredictionFromAlleleArray(strmap, strs, dubSTRs, quadSTRs, perce
                 thiskit.append(float(splits[sl-1]))
                 thiskit.append(float(sl))
     percentMissing = float(missing) / (len(strs) + len(dubSTRs) + len(quadSTRs))
-    print(percentMissing, missing, len(strs), len(dubSTRs), len(quadSTRs))
     if percentMissing > percentMissingSTRThreshold:
         print("percent missing STRs:", percentMissing, "above threshold", percentMissingSTRThreshold)
         return None
