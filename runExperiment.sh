@@ -19,6 +19,8 @@ predictionPolicyFileStem="$predictionDir${pathSeparator}predictionPolicy"
 modelPickleFileStem="$predictionDir${pathSeparator}model"
 experimentMapFileStem="$experimentDir${pathSeparator}experimentMap"
 
+rm $experimentDir${pathSeparator}*
+rm $predictionDir${pathSeparator}*
 python3 "$parseResults_py" "$resultsFile" "$samplestsv"
 sort "$samplestsv" "-k1V" "-k2n" "-k3n" | "bgzip" > "$samplestsv.bgz"
 tabix "-s" "1" "-b" "2" "-e" "3" "$samplestsv.bgz"

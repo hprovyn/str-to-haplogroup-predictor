@@ -26,18 +26,21 @@ def readResultsFile(fil):
 def writeOutPosNegs(outFile):
         
     with open(outFile, 'w') as f:
+        count = 1
         for theid in theKits:
             pos = theKits[theid]["pos"]
             neg = theKits[theid]["neg"]
             strs = theKits[theid]["str"]
             if hasEnoughInfoToProceed(pos, strs):
-                f.write("\t".join(["id", theid, theid, ".", "."]) + "\n")
+                countId = str(count)
+                f.write("\t".join(["id", countId, countId, theid, "."]) + "\n")
                 for p in pos:
-                    f.write("\t".join(["pos", theid, theid, p, "."]) + "\n")
+                    f.write("\t".join(["pos", countId, countId, p, "."]) + "\n")
                 for n in neg:
-                    f.write("\t".join(["neg", theid, theid, n, "."]) + "\n")
+                    f.write("\t".join(["neg", countId, countId, n, "."]) + "\n")
                 for marker in strs:
-                    f.write("\t".join(["str", theid, theid, marker, strs[marker].replace("\t","")]) + "\n")
+                    f.write("\t".join(["str", countId, countId, marker, strs[marker].replace("\t","")]) + "\n")
+                count += 1
             else:
                 print(theid,"ignored because not enough STRs or positive SNPs")
     f.close()

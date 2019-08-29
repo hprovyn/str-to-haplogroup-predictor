@@ -296,7 +296,10 @@ class ParallelCladeFind():
         negResults = tb.querys("neg:" + sampleId + "-" + sampleId)
         negatives = []
         for n in negResults:
-            negatives.append(n[3])
+            if len(n) < 4:
+                print('negative results too few rows',n)
+            else:
+                negatives.append(n[3])
         negatives = set(negatives)
         for ign in toIgnore:
             if ign in positives:
