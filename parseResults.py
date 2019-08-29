@@ -33,11 +33,11 @@ def writeOutPosNegs(outFile):
             strs = theKits[theid]["str"]
             if hasEnoughInfoToProceed(pos, strs):
                 countId = str(count)
-                f.write("\t".join(["id", countId, countId, theid, "."]) + "\n")
+                f.write("\t".join(["id", countId, countId, theid.replace("\t",""), "."]) + "\n")
                 for p in pos:
-                    f.write("\t".join(["pos", countId, countId, p, "."]) + "\n")
+                    f.write("\t".join(["pos", countId, countId, p.replace("\t",""), "."]) + "\n")
                 for n in neg:
-                    f.write("\t".join(["neg", countId, countId, n, "."]) + "\n")
+                    f.write("\t".join(["neg", countId, countId, n.replace("\t",""), "."]) + "\n")
                 for marker in strs:
                     f.write("\t".join(["str", countId, countId, marker, strs[marker].replace("\t","")]) + "\n")
                 count += 1
