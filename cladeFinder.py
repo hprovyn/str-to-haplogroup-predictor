@@ -43,8 +43,8 @@ def parseTreeJSON(fil):
     thefile = open(fil)
     root = json.load(thefile)
     thefile.close()
-    recurseTreeJson(root, hierarchy, snps)
-    return (root["id"], hierarchy, snps)
+    recurseTreeJson(root)
+    return (root["id"])
 
 def parseSNPsString(snpsString):
     thesnps = set([])
@@ -53,14 +53,17 @@ def parseSNPsString(snpsString):
             thesnps.add(snp)
     return thesnps
             
-def recurseTreeJson(node, hierarchy, snps):
+def recurseTreeJson(node):
+    global hierarchy
+    global snps
+    global childMap
     if "children" in node:
         childMap[node["id"]] = []
         for child in node["children"]:
             childMap[node["id"]].append(child["id"])
             hierarchy[child["id"]] = node["id"]
             snps[child["id"]] = parseSNPsString(child["snps"])
-            recurseTreeJson(child, hierarchy, snps)
+            recurseTreeJson(child)
                 
 def getChildren(clade, childParents):
 #    children = []
@@ -146,7 +149,7 @@ def recurseDownTree(positives, childParents, solutions):
         newSequences.append([sequence])
     refineHitsRecursively(newSequences, positives, childParents, solutions)
 
-def getTotalSequence(clade, hierarchy):
+def getTotalSequence(clade):
     sequence = [clade]
     thisClade = clade
     while thisClade in hierarchy:
@@ -161,7 +164,7 @@ def printSolutions(solutions):
     for solution in solutions:
         print(" ".join(solution), getScore(solution))
 
-def getConflicts(sequence, negatives, hierarchy):
+def getConflicts(sequence, negatives):
     conflictingNegatives = []
     for hg in sequence:
         if any(snp in negatives for snp in snps[hg]):
@@ -233,7 +236,7 @@ def writeSampleCladesFile(cladeMap):
     
     
 from operator import itemgetter
-def getRankedSolutions(positives, negatives, hierarchy):
+def getRankedSolutions(positives, negatives):
     solutions = []
     recurseDownTree(positives, hierarchy, solutions)
     scoredSolutions = []
@@ -244,9 +247,9 @@ def getRankedSolutions(positives, negatives, hierarchy):
         lastChainMoreNegThanPos = True
         removed = 0
         while lastChainMoreNegThanPos and removed < len(solution):
-            totalSequence = getTotalSequence(solution[-1 - removed], hierarchy)
+            totalSequence = getTotalSequence(solution[-1 - removed])
             totalSequence.reverse()
-            conflicts = getConflicts(totalSequence, negatives, hierarchy)
+            conflicts = getConflicts(totalSequence, negatives)
             scores = getPathScores(totalSequence, solution, negatives, positives, conflicts)
             clade = solution[-1 - removed]
             if isBasal(clade, negatives, positives, hierarchy):
@@ -266,12 +269,12 @@ def getRankedSolutions(positives, negatives, hierarchy):
 import time
 start = time.time()
 
-a = parseTreeJSON(treeFile)
+parseTreeJSON(treeFile)
 end = time.time()
 print('load tree elapsed time,' + str(round((end-start)/60,2)) + " minutes\n")
 
-hierarchy = a[1]
-snps = a[2]
+#hierarchy = a[1]
+#snps = a[2]
 
 cladeMap = {}
 
@@ -287,7 +290,7 @@ for theid in idresults:
 
 class ParallelCladeFind():
         
-    def findClade(self, tabixFilePath, sampleId, hierarchy, toIgnore, queue):
+    def findClade(self, sampleId, queue):
         tb = tabix.open(tabixFilePath)
         posResults = tb.querys("pos:" + sampleId + "-" + sampleId)
         positives = []
@@ -307,7 +310,7 @@ class ParallelCladeFind():
                 positives.remove(ign)
             if ign in negatives:
                 negatives.remove(ign)
-        b = getRankedSolutions(positives, negatives, hierarchy)
+        b = getRankedSolutions(positives, negatives)
         if len(b) > 0:
             print(sampleId, ' computed as ', b[0][1])
             queue.put((sampleId, b[0][1]))
@@ -333,7 +336,7 @@ for idchunk in idchunks:
     queue = multiprocessing.Queue()
     for sampleId in idchunk:
         pcf = ParallelCladeFind()
-        p = multiprocessing.Process(target=pcf.findClade, args=(tabixFilePath, sampleId, hierarchy, toIgnore, queue))
+        p = multiprocessing.Process(target=pcf.findClade, args=(sampleId, queue))
         processes.append(p)
         p.start()
 
