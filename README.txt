@@ -8,7 +8,7 @@ Processes sample STR and SNP results along with a SNP phylogenetic tree to run a
 
 REQUIREMENTS
 
-. Python 3.6 (2 may work)#Python dependencies
+. Python 3.6 #Python dependencies
   . packages numpy, pandas, time, sys, sklearn, random, json, os, operator, shutil, pickle
 
 . CSV file containing STR and SNP results where each line contains a single ID, MARKER, ALLELE
@@ -24,13 +24,17 @@ Does everything to prepare data and run experiment.
 Takes no command line arguments.
 For all STR group combinations, trains and serializes a model and optimizes and persists :a prediction policy that in some cases changes prediction to a less specific haplogroup panel according to utility weights (if any are changed from default of zero in config file) or to maximize percent correct prediction.
 
-B) runPredict.sh <sampleId>
+The serialized models and other files necessary to make a prediction are stored in the $predictionDir.
 
-This can only be run after runExperiment.sh because it requires the csv output containing STRs and SNPs for each sample as input.
+B) runPredict.sh <$STR1=$ALLELE1,$STR2=$ALLELE2...>
 
-Takes a single command line argument representing a sample id in your data directory.
+This can only be run after runExperiment.sh because it requires the models that were trained during this process.
 
-Loads model from pickle file trained to as many STRs as present in prediction sample, applies prediction policy computed in experiment step, and prints a result to an output file in the data directory called "prediction". This contains the set of STRs used to train the model, model train time, and the ranked order of predicted classes.
+Takes a single command line argument representing the STR allele and value pairs you wish to predict the SNP haplogroup of.
+
+Loads model from pickle file trained to as many STRs as present in the query, applies prediction policy computed in experiment step, and returns the ranked order of predicted classes in an html table.
+
+The predict.php script calls runPredict.sh in order to display the predicted haplogroup in the browser. 
 
 Description of Scripts
 
@@ -46,17 +50,17 @@ Four scripts are ran in order as part of the experiment:
 3) createCSVinputForRF.py
     creates CSV file containing for each sample, the STRs, SNP-calculated terminal subclade, downstream branches not confirmed negative
 
-4) RF_predictor.py
-    increases resolution of training data by inferring a downstream subclade for low SNP resolution samples that match another sample of a SNP-confirmed downstream branch within a STR GD cutoff and which the sample is not confirmed negative for
+4) RF_experiment.py
     creates random forest model with a holdout to use for testing
     reports accuracy per class along with ids which were incorrectly predicted over course of 25 runs
-
     these variables may be overridden by setting them in config.txt:
           
         iterations=25 #number of model runs to execute for calculating average accuracy
-        refine_hg_based_on_strs_gd_cutoff=12 #Genetic distance cutoff used to increase SNP resolution of samples with closest matches
-        model=ab #any combination of a,b,c,d - each corresponds to a set of STRs
+        cladeFinderMaxThreads= #number of parallel threads allowed to run clade finder against all samples
+	createCSVinputMaxThreads= #number of parallel threads allowed to create CSV input file
+	percentMissingSTRThreshold= #percentage (in int form) of STRs allowed to be missing in a sample for it to be considered valid for a model trained on a specific set of [a,b,c,d] STR sets. Missing values are set to zero.
 
+	model=ab #any combination of a,b,c,d - each corresponds to a set of STRs
         a = ["DYS391","DYS389I","DYS437","DYS439","DYS389II","DYS438","DYS426","DYS393","YCAII","DYS390","DYS385","Y-GATA-H4","DYS388","DYS447","DYS19","DYS392"]
         b = ["DYS458","DYS455","DYS454","DYS464","DYS448","DYS449","DYS456","DYS576","CDY","DYS460","DYS459","DYS570","DYS607","DYS442"]
         c = ["DYS728","DYS723","DYS711","DYR76","DYR33","DYS727","DYR157","DYS713","DYS531","DYS578","DYF395","DYS590","DYS537","DYS641","DYS472","DYF406S1","DYS511","DYS557","DYS490","DYS446","DYS481","DYS413","DYS534","DYS450","DYS425","DYS594","DYS444","DYS520","DYS436","DYS565","DYS572","DYS617","DYS568","DYS487","DYS640","DYS492"]
