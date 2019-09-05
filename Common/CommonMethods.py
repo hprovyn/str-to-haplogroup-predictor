@@ -411,11 +411,10 @@ def experimentErrorPolicy(infile, outfile, panelHierFile, policyFileStem, modelP
     for modesIncluded in modeCombos:
         e = Experiment()
         p = multiprocessing.Process(target=e.parallelExperiment, args=(infile, modesIncluded, panelHier, policyFileStem, modelPickleFileStem, utilityWeights, experimentMapFileStem, percentMissingSTRThreshold))
-        p.start()
-        p.join()
+        p.start()        
         processes.append(p)
-    #for p in processes:
-        #p.join()
+    for p in processes:
+        p.join()
     
 def getAlleleArrayFromFile(fil):
     with open(fil, "r") as f:
