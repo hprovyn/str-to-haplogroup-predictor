@@ -14,9 +14,42 @@ REQUIREMENTS
 . CSV file containing STR and SNP results where each line contains a single ID, MARKER, ALLELE
 . JSON file containing YFull tree
 
-EXPERIMENT PROCESS
+INSTALLATION
 
-There are two shell files:
+sudo apt-get install python3
+
+sudo apt-get install python3-pandas
+sudo apt-get install python3-sklearn
+sudo apt-get install python3-numpy
+
+pytabix is not part of python3 distribution libraries. So you'll need to install it using pip.
+
+pip install --user pytabix  (will install only for --user but is ok because web-data won't need this package)
+
+EXPERIMENT vs PREDICT MODES
+
+The runExperiment.sh script runs an experiment that trains an optimized model that can be used to predict SNP Haplogroup from a set of input STRs.
+
+Files are created in two different directories in order to prevent exposure of the sample data to the webserver, which only needs to be able to deserialize a model to run a prediction:
+
+$predictionDir - This contains only those files necessary to run a prediction
+$experimentDir - This contains tsv formatted samples, its gz and tabix indexed versions and other experiment meta data
+
+Example Secure Deployment Strategy
+
+Install on two machines:
+
+A) Experiment machine - has private sample data, no web-server
+B) Web Server machine
+
+1. Run the experiment on the Experiment machine.
+2. scp the $predictionDir onto the Web Server machine.
+3. Set the $predictionDir in config.txt to point to this
+
+Now you have a webserver that can predict STR haplogroup that cannot possibly expose sample data, because it doesn't have it.
+
+
+EXPLANATION OF SHELL FILES:
 
 A) runExperiment.sh
 
