@@ -26,6 +26,12 @@ pytabix is not part of python3 distribution libraries. So you'll need to install
 
 pip3 install --user pytabix  (will install only for --user but is ok because web-data won't need this package)
 
+CONFIG.txt
+
+Set paths to htslib, python3
+
+haplogroupClassConfigPath is the file where you specify the haplogroups to be used as categories in the prediction model. Store this in json format. "branches" may consist of YFull branch names and can designate polyphyletic branches to consider as positive for the class (as in haplogroup A). "html" attribute will be prepended to prediction html table output. 
+
 EXPERIMENT vs PREDICT MODES
 
 The runExperiment.sh script runs an experiment that trains an optimized model that can be used to predict SNP Haplogroup from a set of input STRs.
@@ -88,8 +94,8 @@ Four scripts are ran in order as part of the experiment:
     reports accuracy per class along with ids which were incorrectly predicted over course of 25 runs
     these variables may be overridden by setting them in config.txt:
           
-        iterations=25 #number of model runs to execute for calculating average accuracy
-        cladeFinderMaxThreads= #number of parallel threads allowed to run clade finder against all samples
+    iterations=25 #number of model runs to execute for calculating average accuracy
+    cladeFinderMaxThreads= #number of parallel threads allowed to run clade finder against all samples
 	createCSVinputMaxThreads= #number of parallel threads allowed to create CSV input file
 	percentMissingSTRThreshold= #percentage (in int form) of STRs allowed to be missing in a sample for it to be considered valid for a model trained on a specific set of [a,b,c,d] STR sets. Missing values are set to zero.
 
