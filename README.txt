@@ -24,7 +24,7 @@ sudo apt-get install python3-numpy
 
 pytabix is not part of python3 distribution libraries. So you'll need to install it using pip.
 
-pip install --user pytabix  (will install only for --user but is ok because web-data won't need this package)
+pip3 install --user pytabix  (will install only for --user but is ok because web-data won't need this package)
 
 EXPERIMENT vs PREDICT MODES
 
