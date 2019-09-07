@@ -12,4 +12,4 @@ panelHierarchyFile="$predictionDir${pathSeparator}panelHierarchy.csv"
 predictionPolicyFileStem="$predictionDir${pathSeparator}predictionPolicy"
 modelPickleFileStem="$predictionDir${pathSeparator}model"
 
-python3 "$rfPredict_py" "$panelHierarchyFile" "$predictionPolicyFileStem" "$modelPickleFileStem" "$percentMissingSTRThreshold" $1
+python3 "$rfPredict_py" "$panelHierarchyFile" "$predictionPolicyFileStem" "$modelPickleFileStem" "$percentMissingSTRThreshold" "$haplogroupClassConfigPath" $1

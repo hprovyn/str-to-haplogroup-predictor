@@ -513,7 +513,7 @@ def getSTRmap(queryAlleleArray):
 
 import os
     
-def predict(strAlleleString, panelHierarchy, policyFileStem, modelPickleFileStem, percentMissingSTRThreshold):
+def predict(strAlleleString, panelHierarchy, policyFileStem, modelPickleFileStem, percentMissingSTRThreshold, haplogroupClassConfigPath):
     queryAlleleArray = strAlleleString.split(",")
     validationMessage = validateSTRQuery(queryAlleleArray)
     if validationMessage != None:
@@ -532,9 +532,14 @@ def predict(strAlleleString, panelHierarchy, policyFileStem, modelPickleFileStem
                 rejected = False
             modesIdx += 1
         print(modesIncluded, strs, dubSTRs, quadSTRs)
-        return loadModelAndPredict(predstrs, panelHierarchy, modesIncluded, policyFileStem, modelPickleFileStem)
+        return loadModelAndPredict(predstrs, panelHierarchy, modesIncluded, policyFileStem, modelPickleFileStem, haplogroupClassConfigPath)
+
+import json
+
+def getPredictedHTML(key, haplogroupClassConfigPath):
+    return json.load(open(haplogroupClassConfigPath))[key]["html"]
     
-def loadModelAndPredict(predstrs, panelHierarchy, modesIncluded, policyFileStem, modelPickleFileStem):
+def loadModelAndPredict(predstrs, panelHierarchy, modesIncluded, policyFileStem, modelPickleFileStem, haplogroupClassConfigPath):
     if predstrs == None:
         print("Rejected, not enough STRs in sample to predict")
         return "Rejected, not enough STRs in sample to predict"
@@ -584,12 +589,11 @@ def loadModelAndPredict(predstrs, panelHierarchy, modesIncluded, policyFileStem,
 #                 w.write(p[1] + "," + str(round(p[0],4)) + "\n")
 #         w.close()
 # =============================================================================
-        print(createHTML(refined, predprobaclass))
+        print(getPredictedHTML(refined[0], haplogroupClassConfigPath) + "<br><br>" + createHTML(refined, predprobaclass))
         return refined[0]
 
 def createHTML(refined, predprobaclass):
-    thehtml = "Predicted: " + refined[0] + "<br><br>"
-    thehtml += "<table border=\"1\"><tr><td>Haplogroup</td><td>Score</td></tr>"
+    thehtml = "<table border=\"1\"><tr><td>Haplogroup</td><td>Score</td></tr>"
     for predproba in predprobaclass:
         thehtml += "<tr><td>" + predproba[1] + "</td><td>" + str(round(predproba[0],3)) + "</td></tr>"
     thehtml += "</table>"

@@ -12,6 +12,8 @@ if len(sys.argv) > 1:
     policyFileStem = sys.argv[2]
     modelPickleFileStem = sys.argv[3]
     percentMissingSTRThreshold = float(sys.argv[4])/100
-    strAlleleString = sys.argv[5]
+    strAlleleString = sys.argv[6]
+    haplogroupClassConfigPath = sys.argv[5]
+
     
-CommonMethods.predict(strAlleleString, panelHierarchyFile, policyFileStem, modelPickleFileStem, percentMissingSTRThreshold)
+CommonMethods.predict(strAlleleString, panelHierarchyFile, policyFileStem, modelPickleFileStem, percentMissingSTRThreshold, haplogroupClassConfigPath)

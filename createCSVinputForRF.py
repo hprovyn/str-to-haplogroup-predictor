@@ -191,83 +191,6 @@ def getUpstreamStop(branch, stop):
         seq.remove('')
     return seq
 
-panelMap = {"A": [["A00", "A1a", "A1b1", "A1*", "A1b*"],0],
-             "B": [["B"],0],
-             "C": [["C"],0],
-             "D": [["D"],0],
-             "E": [["E"],0],
-             "E1a-M132": [["E-M132"],0],
-             "E1b-L19": [["E-L19"],0],
-             "E1b-M191": [["E-M191"],0],
-             "E1b-U175": [["E-U175"],0],
-             "E1b-V12": [["E-V12"],0],
-             "E1b-V13": [["E-V13"],0],
-             "E1b-Z834": [["E-Z830"],0],
-             "G": [["G"],0],
-             "G2a-L497":[["G-L497"],0],
-             "G2a-L1259":[["G-L1259"],0],
-             "G2a-Z6552":[["G-Z6552"],0],
-             "H-L901":[["H"],0],
-             "H-M82":[["H-M82"],0],
-             "I1":[["I1"],0],
-             "I1-L22":[["I-L22"],0],
-             "I1-Z63":[["I-Z63"],0],
-             "I1-Z140":[["I-Z140"],0],
-             "I1-Z2539":[["I-CTS7362"],0],
-             "I2":[["I2"],0],
-             "I2a-CTS595":[["I-CTS595"],0],
-             "I2a-CTS10100":[["I-CTS10057"],0],
-             "I2a-M284":[["I-M284"],0],
-             "I2a-M423":[["I-M423"],0],
-             "J1":[["J1"],0],
-             "J2":[["J2"],0],
-             "J2a-L24":[["J-L24"],0],
-             "J2a-M67":[["J-M67"],0],
-             "J2a-PF5197":[["J-PF5197"],0],
-             "J2b":[["J-M102"],0],
-             "L":[["L"],0],
-             "MS-P397":[["K2b1"],0],
-             "N":[["N"],0],
-             "N1a-VL29":[["N-VL29"],0],
-             "N1a-Z1936":[["N-Z1936"],0],
-             "O":[["O"],0],
-             "O-F100":[["O-M134"],0],
-             "O-F145":[["O-L465"],0],
-             "O-M268":[["O-M268"],0],
-             "Q":[["Q"],0],
-             "Q1b-L53":[["Q-L53"],0],
-             "Q1b-L275":[["Q-L275"],0],
-             "R1a":[["R1a"],0],
-             "R1a-L664":[["R-L664"],0],
-             "R1a-M458":[["R-M458"],0],
-             "R1a-Z93":[["R-Z93"],0],
-             "R1a-Z280":[["R-Z280"],0],
-             "R1a-Z284":[["R-Z284"],0],
-             "R1b-DF19":[["R-DF19"],0],
-             "R1b-DF21":[["R-DF21"],0],
-             "R1b-DF27":[["R-DF27"],0],
-             "R1b-DF41":[["R-CTS2501"],0],
-             "R1b-DF49":[["R-DF49"],0],             
-             "R1b-DF63":[["R-DF63"],0],
-             "R1b-FGC5494":[["R-FGC5494"],0],
-             "R1b-FGC11134":[["R-FGC11134"],0],
-             "R1b-L21":[["R-L21"],0],
-             "R1b-L48":[["R-L48"],0],
-             "R1b-L513":[["R-DF1"],0],
-             "R1b-L1335":[["R-L1335"],0],
-             "R1b":[["R1b"],0],
-             "R1b-S1051":[["R-S1051"],0],
-             "R1b-U106":[["R-U106"],0],
-             "R1b-U152":[["R-U152"],0],
-             "R1b-Z251":[["R-Z251"],0],
-             "R1b-Z253":[["R-Z253"],0],
-             "R1b-Z255":[["R-Z255"],0],
-             "R1b-Z2103":[["R-Z2103"],0],
-             "R2":[["R2"],0],
-             "T":[["T"],0],
-             "T-L131":[["T-L131"],0],
-             "T-P77":[["T-P77"],0]}
-
 def writePanelTree(panelMap, panelHierFile):
     justBranches = []
     branchToPanelMap = {}
@@ -344,6 +267,7 @@ def getMostSpecificPanel(panels, panelMap):
 
 import sys
 
+
 if len(sys.argv) > 1:
     treeFile = sys.argv[1]
     tabixFilePath = sys.argv[2]
@@ -351,10 +275,17 @@ if len(sys.argv) > 1:
     csvoutrffile = sys.argv[4]
     panelHierFile = sys.argv[5]
     maxThreads = int(sys.argv[6])
+    haplogroupClassFilePath = sys.argv[7]
+    
     
 thetreestuff = parseTreeJSON(treeFile)
 hierarchy = thetreestuff[1]
 
+haplogroupClassesJson = json.load(open(haplogroupClassFilePath))
+panelMap = {}
+for key in haplogroupClassesJson:
+    panelMap[key] = [haplogroupClassesJson[key]["branches"],0]
+    
 writePanelTree(panelMap, panelHierFile)
 
 

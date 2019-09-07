@@ -1,5 +1,6 @@
 pythonPath=#python directory
 htslibPath=#htslib directory containing tabix and bgzip
+haplogroupClassConfigPath=#haplogroup class configuration file - class in the sense of categorization, this specifies which haplogroups are used as classes in the haplogroup prediction model
 pathSeparator=#windows '\', unix '/'
 pythonScriptsDir=#directory where you put the python scripts
 experimentDir=#directory to put all files necessary to run the experiment
