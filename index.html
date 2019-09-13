@@ -43,9 +43,11 @@ $STR1=$ALLELE1,$STR2=$ALLELE2, ... <b>OR</b> $STR1 $ALLELE1 $STR2 $ALLELE2 ...<b
 </div>
 
 <br>
-This YSEQ haplogroup predictor has been trained by 
+This YSEQ haplogroup predictor has been trained by the following model:
 
-
+<? php
+$message = exec('/var/lib/str-to-haplogroup-predictor/getModelMetadata.sh');
+echo $message; ?>
 
 </body>
 </html>
