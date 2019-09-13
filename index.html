@@ -32,7 +32,7 @@ This YSEQ haplogroup predictor is open source software and can be cloned from Gi
 Please always give a link to <a href="http://predict.yseq.net">this</a> original website as a reference.<br><br><br>
 </div></div>
 <br>
-<div style="padding-right: 30px;padding-bottom: 50px;padding-left: 30px;text-align: center">
+<div style="padding-right: 30px;padding-bottom: 50px;padding-left: 30px;text-align: left">
 <h1>Enter STR to get Prediction</h1><br>
 Enter STRs in one of two formats, then press ENTER:<br><br>
 $STR1=$ALLELE1,$STR2=$ALLELE2, ... <b>OR</b> $STR1 $ALLELE1 $STR2 $ALLELE2 ...<br>
@@ -40,14 +40,12 @@ $STR1=$ALLELE1,$STR2=$ALLELE2, ... <b>OR</b> $STR1 $ALLELE1 $STR2 $ALLELE2 ...<b
 <form action="predict.php" method="POST">
 <input name=input action="predict.php" type="text" maxlength="1000" size="135"></input>
 </form>
+
+<br><br>
+This YSEQ haplogroup predictor has been trained by the following model:<br><br>
+<iframe src="modelInfo.php" width="300" height="250"></iframe>
 </div>
 
-<br>
-This YSEQ haplogroup predictor has been trained by the following model:
-
-<? php
-$message = exec('/var/lib/str-to-haplogroup-predictor/getModelMetadata.sh');
-echo $message; ?>
 
 </body>
 </html>
