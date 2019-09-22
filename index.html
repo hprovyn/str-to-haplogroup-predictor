@@ -35,9 +35,10 @@ Please always give a link to <a href="http://predict.yseq.net">this</a> original
 <div style="padding-right: 30px;padding-bottom: 50px;padding-left: 30px;text-align: left">
 <h1>Enter STR to get Prediction</h1><br>
 Enter STRs in one of two formats, then press ENTER:<br><br>
-$STR1=$ALLELE1,$STR2=$ALLELE2, ... <b>OR</b> $STR1 $ALLELE1 $STR2 $ALLELE2 ...<br>
 <br>
 <form action="predict.php" method="POST">
+<input type="radio" name="format" value="standard" checked> Standard Format: $STR1=$ALLELE1,$STR2=$ALLELE2, ... <b>OR</b> $STR1 $ALLELE1 $STR2 $ALLELE2 ... <br>
+<input type="radio" name="format" value="ftdna"> FTDNA Format: $ALLELE1 $ALLELE2 $ALLELE3... in default FTDNA order containing 12, 25, 37, 67 or 111 STRs <br>
 <input name=input action="predict.php" type="text" maxlength="1000" size="135"></input>
 </form>
 
