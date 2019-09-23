@@ -184,8 +184,13 @@ def createTrainTest(x, y, ids):
     
     for hg in hgMap:
         hgElems = len(hgMap[hg])
-        if hgElems > 2:
+        if hgElems > 2 and hgElems < 10:
             idsToHoldout.append(hgMap[hg][random.randint(0, hgElems - 1)])
+        else:
+            for i in hgMap[hg]:
+                if random.random() < 0.1:
+                    idsToHoldout.append(i)
+                    
     correctOrderIdsHoldout = []
     for theid in ids:
         idx = ids.index(theid)
@@ -386,7 +391,7 @@ class Experiment:
         if utilityWeights != None:
             policyA = expMap[-1][0]
             policyB = expMap[-1][1]
-        
+
         persistPolicy(policyA, policyB, getPolicyFile(policyFileStem, modesIncluded))
         createSpecificModelMetadata(modesIncluded, xT, xH, yT, modelPickleFileStem + "_" + modesIncluded + "_metadata")
 
@@ -404,7 +409,7 @@ def experimentErrorPolicy(infile, outfile, panelHierFile, policyFileStem, modelP
         p.join()
     k = pd.read_csv(infile)
     samples = len(k["Haplogroup"])
-    hgs = len(set(k["Haplogroup"]))
+    hgs = set(k["Haplogroup"])
     createGeneralModelMetadata(samples, hgs, rfEstimators, rfMaxDepth, modelPickleFileStem + "_general_metadata")
     
     
@@ -573,7 +578,7 @@ def loadModelAndPredict(predstrs, panelHierarchy, modesIncluded, policyFileStem,
         predprobaclass.sort(key=sortPredProba)
         predprobaclass.reverse()
         print(predprobaclass)
-        print(getPredictedHTML(refined[0], haplogroupClassConfigPath) + "<br><br>" + createHTML(refined, predprobaclass) + "<br><br>" + getSpecificModelMetadata(modelPickleFileStem, modesIncluded))
+        print(getPredictedHTML(refined[0], haplogroupClassConfigPath) + "<br><br>" + createHTML(refined, predprobaclass) + "<br><b>Model Information</b><br><br>" + getSpecificModelMetadata(modelPickleFileStem, modesIncluded))
         return refined[0]
 
 def createHTML(refined, predprobaclass):
@@ -652,8 +657,12 @@ def writeResults(fil, trainTime, signals, testClasses, removedNonesSTRs, accurac
                     w.write(classAcc[i][0] + " wrongly predicted as " + truthclass[j][0] + ", " + str(round(truthclass[j][1] / iterations,3)) + "," + " ".join(truthclass[j][2]) + "\n")
 
 def createGeneralModelMetadata(samples, classes, rfEstimators, rfMaxDepth, generalModelMetadataFile):
+    if "?" in classes:
+        classes.remove("?")
+    classes = list(classes)
+    classes.sort()
     thehtml = "Training Data:<br><br>"
-    thehtml += "<table border=\"1\"><tr><td>Samples</td><td>" + str(samples) + "</td></tr><tr><td>Haplogroups</td><td>" + str(classes) + "</td></tr></table><br><br>"
+    thehtml += "<table border=\"1\"><tr><td>Samples</td><td>" + str(samples) + "</td></tr><tr><td>Total Haplogroups</td><td>" + str(len(classes)) + "</td></tr><tr><td>Haplogroups</td><td>" + ", ".join(classes) + "</td></tr></table><br>"
     thehtml += "Random Forest Model Parameters:<br><br>"
     thehtml += "<table border=\"1\"><tr><td>Estimators</td><td>" + str(rfEstimators) + "</td></tr><tr><td>Max Depth</td><td>" + str(rfMaxDepth) + "</td></tr></table>"
     #stub for neural net    
@@ -662,7 +671,12 @@ def createGeneralModelMetadata(samples, classes, rfEstimators, rfMaxDepth, gener
     w.close()
 
 def createSpecificModelMetadata(modesIncluded, train, test, classesTrainedOn, specificModelMetadataFile):
-    thehtml = "<table border=\"1\"><tr><td>Training Samples</td><td>" + str(len(train)) + "</td></tr><tr><td>Test Samples</td><td>" + str(len(test)) + "</td></tr><tr><td>Haplogroup Classes Trained</td><td>" + str(len(set(classesTrainedOn))) + "</td></tr></table>"
+    classesTrainedOn = list(set(classesTrainedOn))
+    classesTrainedOn.sort()
+    (strs, dubs, quads) = getSTRLabelsFromSets(modesIncluded)
+    strLabels = list(set(strs + dubs + quads))
+    strLabels.sort()
+    thehtml = "<table border=\"1\"><tr><td>Total STRs trained on</td><td>" + str(len(strLabels)) + "</td></tr><tr><td>STRs trained on</td><td>" + ", ".join(strLabels) + "</td></tr><tr><td>Training Samples</td><td>" + str(len(train)) + "</td></tr><tr><td>Test Samples</td><td>" + str(len(test)) + "</td></tr><tr><td>Total Haplogroup Classes Trained</td><td>" + str(len(classesTrainedOn)) + "</td></tr><tr><td>Haplogroup Classes Trained</td><td>" + ", ".join(classesTrainedOn) + "</td></tr></table>"
     with open(specificModelMetadataFile, "w") as w:
         w.write(thehtml)
     w.close()
