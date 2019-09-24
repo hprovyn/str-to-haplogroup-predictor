@@ -534,7 +534,8 @@ def predict(strAlleleString, panelHierarchy, policyFileStem, modelPickleFileStem
 import json
 
 def getPredictedHTML(key, haplogroupClassConfigPath):
-    return json.load(open(haplogroupClassConfigPath))[key]["html"]
+    thejson = json.load(open(haplogroupClassConfigPath))
+    return thejson[key]["html"] + '<br><br><img src="migration.jpg" height="50" width="50">&nbsp;' + '<a href="' + thejson[key]["migration"] + '" target="_blank">View Migration</a>&nbsp;Computed by PhyloGeographer from YFull and ancient samples'
     
 def loadModelAndPredict(predstrs, panelHierarchy, modesIncluded, policyFileStem, modelPickleFileStem, haplogroupClassConfigPath):
     if predstrs == None:
