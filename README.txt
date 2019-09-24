@@ -30,7 +30,18 @@ CONFIG.txt
 
 Set paths to htslib, python3
 
-haplogroupClassConfigPath is the file where you specify the haplogroups to be used as categories in the prediction model. Store this in json format. "branches" may consist of YFull branch names and can designate polyphyletic branches to consider as positive for the class (as in haplogroup A). "html" attribute will be prepended to prediction html table output. 
+haplogroupClassConfigPath is the json format file where you specify the haplogroups to be used as categories in the prediction model.
+. "branches" may consist of YFull branch names and can designate polyphyletic branches to consider as positive for the class (as in haplogroup A)
+. "html" attribute will be prepended to prediction html table output
+. "migration" link to migration on PhyloGeographer for predicted haplogroup
+
+FILES TO MOVE TO WEB SERVER DIRECTORY
+
+index.html
+predict.php
+modelInfo.php
+RandomForest.jpg
+migration.jpg
 
 EXPERIMENT vs PREDICT MODES
 
@@ -104,3 +115,15 @@ Four scripts are ran in order as part of the experiment:
         b = ["DYS458","DYS455","DYS454","DYS464","DYS448","DYS449","DYS456","DYS576","CDY","DYS460","DYS459","DYS570","DYS607","DYS442"]
         c = ["DYS728","DYS723","DYS711","DYR76","DYR33","DYS727","DYR157","DYS713","DYS531","DYS578","DYF395","DYS590","DYS537","DYS641","DYS472","DYF406S1","DYS511","DYS557","DYS490","DYS446","DYS481","DYS413","DYS534","DYS450","DYS425","DYS594","DYS444","DYS520","DYS436","DYS565","DYS572","DYS617","DYS568","DYS487","DYS640","DYS492"]
         d = ["DYR112","DYS518","DYS614","DYS626","DYS644","DYS684","DYS710","DYS485","DYS632","DYS495","DYS540","DYS714","DYS716","DYS717","DYS505","DYS556","DYS549","DYS589","DYS522","DYS494","DYS533","DYS636","DYS575","DYS638","DYS462","DYS452","DYS445","Y-GATA-A10","DYS463","DYS441","Y-GGAAT-1B07","DYS525","DYS712","DYS593","DYS650","DYS532","DYS715","DYS504","DYS513","DYS561","DYS552","DYS726","DYS635","DYS587","DYS643","DYS497","DYS510","DYS434","DYS461","DYS435"]
+
+DUMMY DATA FOR TESTING PURPOSES
+
+WEB SERVER TEST
+
+FTDNA Format <omit quotes below>
+"12	 24	 15	 10	 13-17	 11	 15	 12	 12	 11	 28	 16	 8-9	 11	 11	 29	 16	 19	 29	 13-15-15-17	 11	 10	 19-20	 13	 14	 17	 17	 36-38	 11	 9	 11	 8	 15-17	 8	 11	 10	 8	 11	 9	 12	 21-23	 16	 11	 12	 12	 17	 8	 13	 23	 20	 11	 12	 11	 14	 10	 13	 12	 11"
+This should be J2b.
+
+Standard Format <omit quotes below>
+"CDY 36-37 DYS19 14 DYS385 13-18 DYS388 13 DYS389I 14 DYS389II 30 DYS390 23 DYS391 10 DYS392 11 DYS393 12 DYS426 11 DYS437 14 DYS438 10 DYS439 11 DYS442 12 DYS447 27 DYS448 21 DYS449 28 DYS454 11 DYS455 11 DYS456 15 DYS458 18.2 DYS459 8-9 DYS460 11 DYS464 15-15-15-16 DYS570 18 DYS576 17 DYS607 13 DYS724 36-37 Y-GATA-H4 11 YCAII 19-22"
+This should be J1.
