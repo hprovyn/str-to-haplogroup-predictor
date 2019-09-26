@@ -38,7 +38,6 @@ haplogroupClassConfigPath is the json format file where you specify the haplogro
 FILES TO MOVE TO WEB SERVER DIRECTORY
 
 index.html
-predict.php
 modelInfo.php
 RandomForest.jpg
 migration.jpg
