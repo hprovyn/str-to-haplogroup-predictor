@@ -388,12 +388,13 @@ class Experiment:
         print('least under specific', expMap[0])
         expMap.sort(key=sortByUtility)
         print('highest utility', expMap[-1])
+        highestUtility = expMap[-1]
         if utilityWeights != None:
             policyA = expMap[-1][0]
             policyB = expMap[-1][1]
 
         persistPolicy(policyA, policyB, getPolicyFile(policyFileStem, modesIncluded))
-        createSpecificModelMetadata(modesIncluded, xT, xH, yT, modelPickleFileStem + "_" + modesIncluded + "_metadata")
+        createSpecificModelMetadata(modesIncluded, xT, xH, yT, modelPickleFileStem + "_" + modesIncluded + "_metadata", highestUtility)
 
 
 def experimentErrorPolicy(infile, outfile, panelHierFile, policyFileStem, modelPickleFileStem, utilityWeights, experimentMapFileStem, percentMissingSTRThreshold, rfEstimators, rfMaxDepth):
@@ -671,13 +672,22 @@ def createGeneralModelMetadata(samples, classes, rfEstimators, rfMaxDepth, gener
         w.write(thehtml)
     w.close()
 
-def createSpecificModelMetadata(modesIncluded, train, test, classesTrainedOn, specificModelMetadataFile):
+def createSpecificModelMetadata(modesIncluded, train, test, classesTrainedOn, specificModelMetadataFile, highestUtility):
     classesTrainedOn = list(set(classesTrainedOn))
     classesTrainedOn.sort()
     (strs, dubs, quads) = getSTRLabelsFromSets(modesIncluded)
     strLabels = list(set(strs + dubs + quads))
     strLabels.sort()
-    thehtml = "<table border=\"1\"><tr><td>Total STRs trained on</td><td>" + str(len(strLabels)) + "</td></tr><tr><td>STRs trained on</td><td>" + ", ".join(strLabels) + "</td></tr><tr><td>Training Samples</td><td>" + str(len(train)) + "</td></tr><tr><td>Test Samples</td><td>" + str(len(test)) + "</td></tr><tr><td>Total Haplogroup Classes Trained</td><td>" + str(len(classesTrainedOn)) + "</td></tr><tr><td>Haplogroup Classes Trained</td><td>" + ", ".join(classesTrainedOn) + "</td></tr></table>"
+    errType1 = highestUtility[2]
+    errType2 = highestUtility[3]
+    errType3 = highestUtility[4]
+    correct = highestUtility[5]
+    totes = errType1 + errType2 + errType3 + correct
+    underSpecificRateString = str(round(errType1 / totes * 100,1)) + "%"
+    overSpecificRateString = str(round(errType2 / totes * 100,1)) + "%"
+    wrongRateString = str(round(errType3 / totes * 100,1)) + "%"
+    correctRateString = str(round(correct / totes * 100,1)) + "%"
+    thehtml = "<table border=\"1\"><tr><td>Total STRs trained on</td><td>" + str(len(strLabels)) + "</td></tr><tr><td>STRs trained on</td><td>" + ", ".join(strLabels) + "</td></tr><tr><td>Training Samples</td><td>" + str(len(train)) + "</td></tr><tr><td>Test Samples</td><td>" + str(len(test)) + "</td></tr><tr><td>Total Haplogroup Classes Trained</td><td>" + str(len(classesTrainedOn)) + "</td></tr><tr><td>Haplogroup Classes Trained</td><td>" + ", ".join(classesTrainedOn) + "</td></tr><tr><td>Underspecificity Error</td><td>"+ underSpecificRateString +"</td></tr><tr><td>Overspecificity Error</td><td>"+overSpecificRateString+"</td></tr><tr><td>Other Error</td><td>"+wrongRateString+"</td></tr><tr><td>Accuracy</td><td>" +correctRateString+ "</td></tr></table>"
     with open(specificModelMetadataFile, "w") as w:
         w.write(thehtml)
     w.close()
