@@ -87,7 +87,7 @@ def convertSTRrowToMap(ks, sampleIdx, strs, dubSTRs, quadSTRs):
         strmap[thestr] = ks[thestr][sampleIdx]
     return strmap
 
-def addKits(strs, dubSTRs, quadSTRs, ks, ids, idsToKeep, hgs, thekits, theids, thehgs, rejected, percentMissingSTRThreshold):
+def addKits(strs, dubSTRs, quadSTRs, ks, ids, idsToKeep, hgs, thekits, theids, thehgs, rejected, percentMissingSTRThreshold, allowable):
         
     for i in range(len(ids)):
         #if i % 20 == 0:
@@ -99,25 +99,28 @@ def addKits(strs, dubSTRs, quadSTRs, ks, ids, idsToKeep, hgs, thekits, theids, t
         if thehg == "?":
             rejected[(thisId)] = "unknown haplogroup"
         else:
-            strmap = convertSTRrowToMap(ks, i, strs, dubSTRs, quadSTRs)
-            modelInputFormattedSTRs = getValuesForPredictionFromAlleleArray(strmap, strs, dubSTRs, quadSTRs, percentMissingSTRThreshold)
-            if modelInputFormattedSTRs != None:
+            if str(allowable[i]) != "NaN":
+                strmap = convertSTRrowToMap(ks, i, strs, dubSTRs, quadSTRs)
+                modelInputFormattedSTRs = getValuesForPredictionFromAlleleArray(strmap, strs, dubSTRs, quadSTRs, percentMissingSTRThreshold)
+                if modelInputFormattedSTRs != None:
+                
+                    thekits.append(np.array(modelInputFormattedSTRs))#[0:thelength])
+                    theids.append(str(thisId))
+                    thehgs.append(thehg)
+    
+                else:
+                    rejected[str(thisId)] = strmap
+        
             
-                thekits.append(np.array(modelInputFormattedSTRs))#[0:thelength])
-                theids.append(str(thisId))
-                thehgs.append(thehg)
-
-            else:
-                rejected[str(thisId)] = strmap
          
 import pandas as pd
 def parseTrainCSV(strs, dubSTRs, quadSTRs, fil, modesIncluded, thekits, theids, thehgs, rejected, percentMissingSTRThreshold):
     k = pd.read_csv(fil)    
     ids = k["Kit Number"]
     hgs = k["Haplogroup"]
-    #allowable = k["Allowable Downstream"]
+    allowable = k["Allowable Downstream"]
     
-    addKits(strs, dubSTRs, quadSTRs, k, ids, [], hgs, thekits, theids, thehgs, rejected, percentMissingSTRThreshold)
+    addKits(strs, dubSTRs, quadSTRs, k, ids, [], hgs, thekits, theids, thehgs, rejected, percentMissingSTRThreshold, allowable)
 
 def getClosestCutoff(uncertainidx, cutoff, thekits, thehgs, uncertainKits, uncertainAllowable):
     mindist = 100
@@ -377,6 +380,7 @@ class Experiment:
         print(modesIncluded)
         print('best percent correct', expMap[-1])
         if utilityWeights == None:
+            best = expMap[-1]
             policyA = expMap[-1][0]
             policyB = expMap[-1][1]
         
@@ -388,13 +392,13 @@ class Experiment:
         print('least under specific', expMap[0])
         expMap.sort(key=sortByUtility)
         print('highest utility', expMap[-1])
-        highestUtility = expMap[-1]
         if utilityWeights != None:
             policyA = expMap[-1][0]
             policyB = expMap[-1][1]
+            best = expMap[-1]
 
         persistPolicy(policyA, policyB, getPolicyFile(policyFileStem, modesIncluded))
-        createSpecificModelMetadata(modesIncluded, xT, xH, yT, modelPickleFileStem + "_" + modesIncluded + "_metadata", highestUtility)
+        createSpecificModelMetadata(modesIncluded, xT, xH, yT, modelPickleFileStem + "_" + modesIncluded + "_metadata", best)
 
 
 def experimentErrorPolicy(infile, outfile, panelHierFile, policyFileStem, modelPickleFileStem, utilityWeights, experimentMapFileStem, percentMissingSTRThreshold, rfEstimators, rfMaxDepth):
