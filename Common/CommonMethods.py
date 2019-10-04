@@ -263,7 +263,7 @@ def refinePredictionsPerPolicy(preds, predProbas, panelHier, policyA, policyB):
         pred = policyValue[0]
         maxPred = policyValue[1]
         ratio = policyValue[2]
-        if maxPred < policyA or ratio < policyB:
+        if ratio < policyB:
             if pred in panelHier:
                 refined.append(panelHier[pred])
                 #print(pred, 'refined based on policy to', panelHier[pred])
@@ -359,8 +359,8 @@ class Experiment:
         
         (errorTotals, percentCorrect) = getErrorTypesAndPercentCorrect(preds, y, panelHier)
         #print(getUtility(errorTotals, errorWeights))
-        optimum = optimizePolicyParameters(preds, predProbas, y, panelHier, [.11,.12,.13,.14,.15,.16,.17,.18,.19,.2,.21,.22,.23,.24,.25,.26,.27,.28,.29,.3],
-                                 [1.02, 1.05,1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8,1.9,2,2.1,2.2,2.5,3,3.5,4], errorWeights)
+        optimum = optimizePolicyParameters(preds, predProbas, y, panelHier, [1],
+                                  [1.02,1.05,1.08,1,1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8,1.9,2,2.1,2.2,2.3,2.4,2.5,2.6,2.7,2.8,2.9,3,3.1,3.2,3.3,3.4,3.5,3.6,3.7,3.8,3.9,4], errorWeights)
         #print(optimum)
         #print(len(preds))
         def sortByPercentCorrect(t):
@@ -380,6 +380,7 @@ class Experiment:
         print(modesIncluded)
         print('best percent correct', expMap[-1])
         if utilityWeights == None:
+            print('persisting best correct')
             best = expMap[-1]
             policyA = expMap[-1][0]
             policyB = expMap[-1][1]
@@ -393,6 +394,7 @@ class Experiment:
         expMap.sort(key=sortByUtility)
         print('highest utility', expMap[-1])
         if utilityWeights != None:
+            print('persisting highest utility')
             policyA = expMap[-1][0]
             policyB = expMap[-1][1]
             best = expMap[-1]
@@ -691,7 +693,8 @@ def createSpecificModelMetadata(modesIncluded, train, test, classesTrainedOn, sp
     overSpecificRateString = str(round(errType2 / totes * 100,1)) + "%"
     wrongRateString = str(round(errType3 / totes * 100,1)) + "%"
     correctRateString = str(round(correct / totes * 100,1)) + "%"
-    thehtml = "<table border=\"1\"><tr><td>Total STRs trained on</td><td>" + str(len(strLabels)) + "</td></tr><tr><td>STRs trained on</td><td>" + ", ".join(strLabels) + "</td></tr><tr><td>Training Samples</td><td>" + str(len(train)) + "</td></tr><tr><td>Test Samples</td><td>" + str(len(test)) + "</td></tr><tr><td>Total Haplogroup Classes Trained</td><td>" + str(len(classesTrainedOn)) + "</td></tr><tr><td>Haplogroup Classes Trained</td><td>" + ", ".join(classesTrainedOn) + "</td></tr><tr><td>Underspecificity Error</td><td>"+ underSpecificRateString +"</td></tr><tr><td>Overspecificity Error</td><td>"+overSpecificRateString+"</td></tr><tr><td>Other Error</td><td>"+wrongRateString+"</td></tr><tr><td>Accuracy</td><td>" +correctRateString+ "</td></tr></table>"
+    accurateOrUnderspecificRateString = str(round((errType1 + correct)/ totes * 100,1)) + "%"
+    thehtml = "<table border=\"1\"><tr><td>Total STRs trained on</td><td>" + str(len(strLabels)) + "</td></tr><tr><td>STRs trained on</td><td>" + ", ".join(strLabels) + "</td></tr><tr><td>Training Samples</td><td>" + str(len(train)) + "</td></tr><tr><td>Test Samples</td><td>" + str(len(test)) + "</td></tr><tr><td>Total Haplogroup Classes Trained</td><td>" + str(len(classesTrainedOn)) + "</td></tr><tr><td>Haplogroup Classes Trained</td><td>" + ", ".join(classesTrainedOn) + "</td></tr><tr><td>Underspecificity Error</td><td>"+ underSpecificRateString +"</td></tr><tr><td>Overspecificity Error</td><td>"+overSpecificRateString+"</td></tr><tr><td>Other Error</td><td>"+wrongRateString+"</td></tr><tr><td>Accuracy</td><td>" +correctRateString+ "</td></tr><tr><td>Accurate or Underspecific</td><td>" +accurateOrUnderspecificRateString+ "</td></tr></table>"
     with open(specificModelMetadataFile, "w") as w:
         w.write(thehtml)
     w.close()
