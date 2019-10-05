@@ -256,6 +256,35 @@ def getErrorTypesAndPercentCorrect(preds, truth, panelHier):
     #print(underSpecificityError, overSpecificityError, flatOutWrong, correct)
     return ([underSpecificityError, overSpecificityError, flatOutWrong, correct], correct / len(preds))
 
+def getRawPredConfidenceMap(preds, predProbas, truth):
+    policyValues = fromPredProbaGetPolicyValues(preds, predProbas)
+    rawPredMap = []
+
+    for j in range(len(policyValues)):
+        policyValue = policyValues[j]
+        ratio = policyValue[2]
+        pred = policyValue[0]
+        
+        if pred == truth[j]:
+            rawPredMap.append([ratio, True])
+        else:
+            rawPredMap.append([ratio, False])
+    return rawPredMap
+
+def lookupConfidence(rawPredMap, ratio):
+    total = 0
+    totalCorrect = 0
+    for rawPred in rawPredMap:
+        theratio, correct = rawPred
+        if theratio > ratio * 0.8 and theratio < ratio * 1.2:
+            total += 1
+            if correct:
+                totalCorrect += 1
+    if total == 0:
+        return -1
+    return totalCorrect / total
+
+        
 def refinePredictionsPerPolicy(preds, predProbas, panelHier, policyA, policyB):
     policyValues = fromPredProbaGetPolicyValues(preds, predProbas)
     refined = []
@@ -303,6 +332,12 @@ def persistPolicy(policyA, policyB, policyFile):
         w.write("b," + str(policyB) + "\n")
     w.close()
     
+def persistRawPredConfidence(rawPredConfidence, rawPredConfidenceFile):
+    with open(rawPredConfidenceFile, "w") as w:
+        for rawPredConf in rawPredConfidence:
+            w.write(str(rawPredConf[0]) + "," + str(int(rawPredConf[1])) + "\n")
+    w.close()
+    
 def readPolicy(policyFile):
     policyA = None
     policyB = None
@@ -316,6 +351,15 @@ def readPolicy(policyFile):
             if policyVar == "b":
                 policyB = float(policy)
     return (policyA, policyB)
+
+def readRawPredConfidence(rawPredConfidenceFile):
+    rawPredConfidence = []
+    with open(rawPredConfidenceFile, "r") as f:
+        for line in f.readlines():
+            linesplit = line.strip("\n").split(",")
+            rawPredConfidence.append([float(linesplit[0]), bool(int(linesplit[1]))])
+    return rawPredConfidence
+
 
 def persistExperimentMap(experimentMapFileStem, modesIncluded, expMap):
     with open(experimentMapFileStem + "_" + modesIncluded + ".csv", "w") as w:
@@ -360,7 +404,7 @@ class Experiment:
         (errorTotals, percentCorrect) = getErrorTypesAndPercentCorrect(preds, y, panelHier)
         #print(getUtility(errorTotals, errorWeights))
         optimum = optimizePolicyParameters(preds, predProbas, y, panelHier, [1],
-                                  [1.02,1.05,1.08,1,1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8,1.9,2,2.1,2.2,2.3,2.4,2.5,2.6,2.7,2.8,2.9,3,3.1,3.2,3.3,3.4,3.5,3.6,3.7,3.8,3.9,4], errorWeights)
+                                  [1.01,1.02,1.05,1.08,1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8,1.9,2,2.1,2.2,2.3,2.4,2.5,2.6,2.7,2.8,2.9,3,3.1,3.2,3.3,3.4,3.5,3.6,3.7,3.8,3.9,4], errorWeights)
         #print(optimum)
         #print(len(preds))
         def sortByPercentCorrect(t):
@@ -400,6 +444,10 @@ class Experiment:
             best = expMap[-1]
 
         persistPolicy(policyA, policyB, getPolicyFile(policyFileStem, modesIncluded))
+        
+        rawPredConf = getRawPredConfidenceMap(preds, predProbas, y)
+        persistRawPredConfidence(rawPredConf, getRawPredConfFile(policyFileStem, modesIncluded))
+        print("Raw pred conf of 2.0", str(lookupConfidence(rawPredConf, 2.0)))
         createSpecificModelMetadata(modesIncluded, xT, xH, yT, modelPickleFileStem + "_" + modesIncluded + "_metadata", best)
 
 
@@ -505,6 +553,8 @@ def getModesPklFile(stem, modes):
 
 def getPolicyFile(stem, modes):
     return stem + "_" + modes + ".csv"
+def getRawPredConfFile(stem, modes):
+    return stem + "_" + modes + "_prediction_confidence.csv"
 
 def getSTRmap(queryAlleleArray):
     strmap = {}
@@ -586,13 +636,36 @@ def loadModelAndPredict(predstrs, panelHierarchy, modesIncluded, policyFileStem,
         predprobaclass.sort(key=sortPredProba)
         predprobaclass.reverse()
         print(predprobaclass)
-        print(getPredictedHTML(refined[0], haplogroupClassConfigPath) + "<br><br>" + createHTML(refined, predprobaclass) + "<br><b>Model Information</b><br><br>" + getSpecificModelMetadata(modelPickleFileStem, modesIncluded))
+        print(getPredictedHTML(refined[0], haplogroupClassConfigPath) + "<br><br>" + createHTML(refined, predprobaclass, readRawPredConfidence(getRawPredConfFile(policyFileStem, modesIncluded))) + "<br><b>Model Information</b><br><br>" + getSpecificModelMetadata(modelPickleFileStem, modesIncluded))
         return refined[0]
 
-def createHTML(refined, predprobaclass):
-    thehtml = "<table border=\"1\"><tr><td>Haplogroup</td><td>Score</td></tr>"
+def createHTML(refined, predprobaclass, rawPredConfidence):
+    thehtml = "<table border=\"1\"><tr><td>Haplogroup</td><td>Score</td><td>Score Bar</td></tr>"
+    added = False
     for predproba in predprobaclass:
-        thehtml += "<tr><td>" + predproba[1] + "</td><td>" + str(round(predproba[0],3)) + "</td></tr>"
+        thehtml += "<tr><td>" + predproba[1] + "</td><td>" + str(round(predproba[0],3)) + "</td><td>"
+        if not added:
+            accuracy = lookupConfidence(rawPredConfidence, predprobaclass[0][0] / predprobaclass[1][0])
+            color = "red"
+            if accuracy > 0.5:
+                color = "yellow"
+            if accuracy > 0.9:
+                color = "green"
+            if accuracy != -1:
+                thehtml += "<font color=\""+color+"\">"
+            else:
+                thehtml += "<font color=\"red\">"
+        for i in range(int(predproba[0] * 100)):
+            thehtml += "&#9608;"
+        if not added:
+            thehtml += "</font>"
+            if accuracy != -1:
+                thehtml += "&nbsp;" + str(round(100 * accuracy,1))+ "% Confidence"
+            else:
+                thehtml += "&nbsp;No Confidence Information For This Prediction"
+            added = True
+            
+        thehtml += "</td></tr>"
     thehtml += "</table>"
     return thehtml
     
