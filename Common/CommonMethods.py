@@ -84,7 +84,8 @@ def is_float(value):
 def convertSTRrowToMap(ks, sampleIdx, strs, dubSTRs, quadSTRs):
     strmap = {}
     for thestr in set(strs) | set(dubSTRs) | set(quadSTRs):
-        strmap[thestr] = ks[thestr][sampleIdx]
+        if ks[thestr][sampleIdx] != 0:
+            strmap[thestr] = ks[thestr][sampleIdx]
     return strmap
 
 def addKits(strs, dubSTRs, quadSTRs, ks, ids, idsToKeep, hgs, thekits, theids, thehgs, rejected, percentMissingSTRThreshold, allowable):
@@ -256,10 +257,10 @@ def getErrorTypesAndPercentCorrect(preds, truth, panelHier):
     #print(underSpecificityError, overSpecificityError, flatOutWrong, correct)
     return ([underSpecificityError, overSpecificityError, flatOutWrong, correct], correct / len(preds))
 
-def getRawPredConfidenceMap(preds, predProbas, truth):
+def getRawPredConfidenceMap(preds, predProbas, truth, ids, x):
     policyValues = fromPredProbaGetPolicyValues(preds, predProbas)
     rawPredMap = []
-
+    wrongIndexes = []
     for j in range(len(policyValues)):
         policyValue = policyValues[j]
         ratio = policyValue[2]
@@ -269,7 +270,8 @@ def getRawPredConfidenceMap(preds, predProbas, truth):
             rawPredMap.append([ratio, True])
         else:
             rawPredMap.append([ratio, False])
-    return rawPredMap
+            wrongIndexes.append((ids[j],truth[j],pred, x[j]))
+    return rawPredMap, wrongIndexes
 
 def lookupConfidence(rawPredMap, ratio):
     total = 0
@@ -337,7 +339,13 @@ def persistRawPredConfidence(rawPredConfidence, rawPredConfidenceFile):
         for rawPredConf in rawPredConfidence:
             w.write(str(rawPredConf[0]) + "," + str(int(rawPredConf[1])) + "\n")
     w.close()
-    
+
+def persistRawPredErrors(rawPredErrors, rawPredErrorFile):
+    with open(rawPredErrorFile, "w") as w:
+        w.write("id,actual,predicted,str_alleles\n")
+        for rawPredError in rawPredErrors:
+            w.write(str(rawPredError[0]) + "," + rawPredError[1] + "," + rawPredError[2] + "," + " ".join(list(map(str,rawPredError[3]))) + "\n")
+    w.close()
 def readPolicy(policyFile):
     policyA = None
     policyB = None
@@ -401,7 +409,7 @@ class Experiment:
         #policyValues = fromPredProbaGetPolicyValues(preds, predProbas)
         #print(policyValues)
         
-        (errorTotals, percentCorrect) = getErrorTypesAndPercentCorrect(preds, y, panelHier)
+        
         #print(getUtility(errorTotals, errorWeights))
         optimum = optimizePolicyParameters(preds, predProbas, y, panelHier, [1],
                                   [1.01,1.02,1.05,1.08,1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8,1.9,2,2.1,2.2,2.3,2.4,2.5,2.6,2.7,2.8,2.9,3,3.1,3.2,3.3,3.4,3.5,3.6,3.7,3.8,3.9,4], errorWeights)
@@ -445,8 +453,10 @@ class Experiment:
 
         persistPolicy(policyA, policyB, getPolicyFile(policyFileStem, modesIncluded))
         
-        rawPredConf = getRawPredConfidenceMap(preds, predProbas, y)
+        (rawPredConf, errors) = getRawPredConfidenceMap(preds, predProbas, y, ids, x)
         persistRawPredConfidence(rawPredConf, getRawPredConfFile(policyFileStem, modesIncluded))
+        
+        persistRawPredErrors(errors, getRawPredErrorFile(policyFileStem, modesIncluded))
         print("Raw pred conf of 2.0", str(lookupConfidence(rawPredConf, 2.0)))
         createSpecificModelMetadata(modesIncluded, xT, xH, yT, modelPickleFileStem + "_" + modesIncluded + "_metadata", best)
 
@@ -555,7 +565,8 @@ def getPolicyFile(stem, modes):
     return stem + "_" + modes + ".csv"
 def getRawPredConfFile(stem, modes):
     return stem + "_" + modes + "_prediction_confidence.csv"
-
+def getRawPredErrorFile(stem, modes):
+    return stem + "_" + modes + "_errors.csv"
 def getSTRmap(queryAlleleArray):
     strmap = {}
     for thestr in queryAlleleArray:
