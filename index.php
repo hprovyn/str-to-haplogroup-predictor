@@ -12,12 +12,12 @@
 
 
                 <div id="header" class="grid_24">
-                  <div id="storeLogo"><a href="https://www.yseq.net/index.php?osCsid=6db9ca8c7e879f25f324d075a6382226"><img src="https://www.yseq.net/images/store_logo.png" alt="YSEQ DNA Shop" title="YSEQ DNA Shop" width="552" height="175" /></a></div>
+                  <div id="storeLogo"><a href="https://www.yseq.net/index.php"><img src="https://www.yseq.net/images/store_logo.png" alt="YSEQ DNA Shop" title="YSEQ DNA Shop" width="552" height="175" /></a></div>
                 
 
                 
                 <div class="grid_24 ui-widget infoBoxContainer">
-                  <div class="ui-widget-header infoBoxHeading">&nbsp;&nbsp;<a href="http://www.yseq.net" class="headerNavigation">Top</a> &raquo; <a href="https://www.yseq.net/index.php?osCsid=6db9ca8c7e879f25f324d075a6382226" class="headerNavigation">Catalog</a></div>
+                  <div class="ui-widget-header infoBoxHeading">&nbsp;&nbsp;<a href="http://www.yseq.net" class="headerNavigation">Top</a> &raquo; <a href="https://www.yseq.net/index.php" class="headerNavigation">Catalog</a></div>
                 </div>
 
 
@@ -25,21 +25,22 @@
         <h1>YSEQ Haplogroup Predictor (beta version)</h1><br>
     <div style="display:inline-block;padding-top: 50px;padding-right: 30px;padding-bottom: 50px;padding-left: 30px;"><img src="RandomForest.jpg" alt="Random Forest" title="Random Forest" width="300" />
 </div><div style="display:inline-block; width:50%;padding-top: 50px;padding-right: 30px;padding-bottom: 50px;padding-left: 80px;">
-Developed by Hunter Provyn with input and support from YSEQ / Thomas Krahn.<br>
+Developed by Hunter Provyn with input and support from Thomas Krahn (2019).<br>
 The haplogroup prediction is backed by a Random Forest model implemented in python using <a href="https://scikit-learn.org/stable/">sklearn</a>.<br><br>
 
 This YSEQ haplogroup predictor is open source software and can be cloned from GitHub: <a href="https://github.com/hprovyn/str-to-haplogroup-predictor">https://github.com/hprovyn/str-to-haplogroup-predictor</a><br><br>
 
 Please always give a link to <a href="http://predict.yseq.net">this</a> original website as a reference.<br><br><br>
+
 </div></div>
 <br>
 <div style="padding-right: 30px;padding-bottom: 50px;padding-left: 30px;text-align: left">
-<h1>Enter STR to get Prediction</h1><br>
+<h1>Enter STR Alleles for Y-Haplogroup Prediction</h1><br>
 Enter STRs in one of two formats, then press ENTER:<br><br>
 <br>
 <form action="<?php echo htmlentities($_SERVER['PHP_SELF']); ?>" method="POST">
 <input type="radio" name="format" value="standard" checked> Standard Format: $STR1=$ALLELE1,$STR2=$ALLELE2, ... <b>OR</b> $STR1 $ALLELE1 $STR2 $ALLELE2 ... <br>
-<input type="radio" name="format" value="ftdna"> FTDNA Tab Separated Format (copy results table row): $ALLELE1 TAB $ALLELE2 TAB $ALLELE3... in default FTDNA order containing 12, 25, 37, 67 or 111 STRs <br>
+<input type="radio" name="format" value="ftdna"> FTDNA Tab Separated Format (copy results table row): $ALLELE1 TAB $ALLELE2 TAB $ALLELE3... in default FTDNA order containing 12, 25, 37, 67 or 111 STR Alleles <br>
 
 <?php if(isset($_POST['input'])) { ?>
         <input name=input type="text" value="<?php echo $_POST['input']; ?>" maxlength="1000" size="135"></input><?php
@@ -51,6 +52,18 @@ Enter STRs in one of two formats, then press ENTER:<br><br>
 <br><br>
 <b>Experiment Information</b><br>
 <iframe src="modelInfo.php" width="880" height="280"></iframe><br>
+<br>
+<i>The YSEQ Haplogroup Predictor was influenced by the ideas of <a href="http://www.hprg.com/hapest5/hapest5b/hapest5.htm">Whit Athey's Haplogroup Predictor</a> (2006) and the <a href="http://www.nevgen.org">NevGen Predictor</a> from Milos Cetkovic Gentula and Aco Nevski (2014).<br><br>
+While both mentioned haplogroup predictors use a Bayesian-Allele-Frequency approach, this YSEQ predictor uses machine learning with the random forest technique. <br>
+Machine learning is in its infancy, so this predictor is unlikely to give you better or more precise results than the Bayesian predictor types, but at least you can consider it as a <b>second opinion</b> 
+with an independent method.<br> 
+Note that the YSEQ predictor is based on results of YSEQ customers, but it doesn't reveal the underlying STR profiles and original sample donors (they are not even stored on this web server at all). 
+A computer based random number generator is the origin for creating random decision trees 
+which are then just tested with a real life truth set. The teaching process simply selects the best decision trees and uses them for the prediction process.<br>
+Please consider this beta version as an experiment which is largely untested and which needs a lot of improvements for reliable haplogroup predictions. We hope that when the number of samples increases, more and more 
+outlier cases will be covered and considered for the prediction. We hope that this tool will become useful for the genetic genealogy community. The YSEQ Haplogroup Predictor comes with <b>no warranty</b>, explicit or implied.</i><br>
+<br>
+
 
 <?php if(isset($_POST['input'])) { 
         $corrected = "";
