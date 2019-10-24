@@ -85,6 +85,7 @@ outlier cases will be covered and considered for the prediction. We hope that th
             $ftdnaHeaderOrder = array("DYS393","DYS390","DYS19","DYS391","DYS385","DYS426","DYS388","DYS439","DYS389I","DYS392","DYS389II","DYS458","DYS459","DYS455","DYS454","DYS447","DYS437","DYS448","DYS449","DYS464","DYS460","Y-GATA-H4","YCAII","DYS456","DYS607","DYS576","DYS570","CDY","DYS442","DYS438","DYS531","DYS578","DYF395","DYS590","DYS537","DYS641","DYS472","DYF406S1","DYS511","DYS425","DYS413","DYS557","DYS594","DYS436","DYS490","DYS534","DYS450","DYS444","DYS481","DYS520","DYS446","DYS617","DYS568","DYS487","DYS572","DYS640","DYS492","DYS565","DYS710","DYS485","DYS632","DYS495","DYS540","DYS714","DYS716","DYS717","DYS505","DYS556","DYS549","DYS589","DYS522","DYS494","DYS533","DYS636","DYS575","DYS638","DYS462","DYS452","DYS445","Y-GATA-A10","DYS463","DYS441","Y-GGAAT-1B07","DYS525","DYS712","DYS593","DYS650","DYS532","DYS715","DYS504","DYS513","DYS561","DYS552","DYS726","DYS635","DYS587","DYS643","DYS497","DYS510","DYS434","DYS461","DYS435");
         
             $strs = preg_split("/[\t]/", $input);
+            echo $input . "<br>" . $strs . "<br>" . count($strs) . "<br>";          
             $alleles = array();
             for ($x = 0; $x < count($strs); $x++) {
                 if ($ftdnaHeaderOrder[$x] == "Y-GATA-H4") {
@@ -107,20 +108,39 @@ outlier cases will be covered and considered for the prediction. We hope that th
         $alleleRow = $alleleRow . "<td>" . $alleleExploded[1] . "</td>";
         }
         $parsedTable = $parsedTable . $strRow . "</tr>" . $alleleRow . "</tr></table>";
-        echo '<br><b>STR Input</b><iframe width="880" height="150" srcdoc="' . $parsedTable . $corrected . '"></iframe><br><br>';
+        $strInputHTML = $parsedTable . $corrected;
+        echo '<br><b>STR Input</b><div style="outline: 1px solid black" width="880" height="150"><div id="strinput" style="padding:10px;overflow-x:scroll;max-width:860px"></div></div><br><br>';
         
         $message = exec('/var/lib/str-to-haplogroup-predictor/runPredict.sh ' . $parsed);
         $outputsplit = explode("Model Information", $message);
         $predsplit = str_replace("&", "&amp;", $outputsplit[0]);
         $predsplit = str_replace("\"", "&quot;", $predsplit);
-        echo '<b>Prediction</b><iframe width="880" height="250" srcdoc="' . $predsplit . '"></iframe><br><br>';
+        echo '<b>Prediction</b><div style="outline: 1px solid black" width="880" height="250"><div id="pred" style="padding:10px;overflow-y: scroll;max-height:230px" id="pred" width="860" height="230"></div></div><br><br>';
         $modelsplit = str_replace("&", "&amp;", $outputsplit[1]);
         $modelsplit = str_replace("\"", "&quot;", $modelsplit);
-        echo '<b>Model Information</b><iframe width="880" height="400" srcdoc="' . $modelsplit . '"></iframe>';
+        echo '<b>Model Information</b><div style="outline: 1px solid black" width="880" height="400"><div id="model" style="padding:10px;overflow-y: scroll;max-height:380px"></div></div>';
+        $updateSrc = true;
 } ?>
 
 </div>
+<script>
+function removeHTMLCodes(html) {
+    var a = html.replace(/&amp;#9608;/g, "█")
+    a = a.replace(/&quot;/g, "\"")
+    a = a.replace(/&amp;nbsp;/g, " ")
+    return a
+}
 
+var content = " <?php echo $predsplit ?> "
+content = removeHTMLCodes(content)
+document.getElementById("pred").innerHTML = content;
+var content = " <?php echo $strInputHTML ?> "
+content = removeHTMLCodes(content)
+document.getElementById("strinput").innerHTML = content;
+var content = " <?php echo $modelsplit ?> "
+content = removeHTMLCodes(content)
+document.getElementById("model").innerHTML = content;
+</script>
 
 </body>
 </html>

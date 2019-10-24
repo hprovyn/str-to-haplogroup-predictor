@@ -647,7 +647,7 @@ def loadModelAndPredict(predstrs, panelHierarchy, modesIncluded, policyFileStem,
         predprobaclass.sort(key=sortPredProba)
         predprobaclass.reverse()
         print(predprobaclass)
-        print(getPredictedHTML(refined[0], haplogroupClassConfigPath) + "<br><br>" + createHTML(refined, predprobaclass, readRawPredConfidence(getRawPredConfFile(policyFileStem, modesIncluded))) + "<br><b>Model Information</b><br><br>" + getSpecificModelMetadata(modelPickleFileStem, modesIncluded))
+        print(getPredictedHTML(refined[0], haplogroupClassConfigPath) + "<br><br>" + createHTML(refined, predprobaclass, readRawPredConfidence(getRawPredConfFile(policyFileStem, modesIncluded))) + "<b>Model Information</b>" + getSpecificModelMetadata(modelPickleFileStem, modesIncluded))
         return refined[0]
 
 def createHTML(refined, predprobaclass, rawPredConfidence):
