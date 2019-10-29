@@ -12,25 +12,41 @@ def getSTRLabelsFromSets(modesIncluded):
     b_group = ["DYS458","DYS455","DYS454","DYS464","DYS448","DYS449","DYS456","DYS576","CDY","DYS460","DYS459","DYS570","DYS607","DYS442"]
     c_group = ["DYS728","DYS723","DYS711","DYR76","DYR33","DYS727","DYR157","DYS713","DYS531","DYS578","DYF395","DYS590","DYS537","DYS641","DYS472","DYF406S1","DYS511","DYS557","DYS490","DYS446","DYS481","DYS413","DYS534","DYS450","DYS425","DYS594","DYS444","DYS520","DYS436","DYS565","DYS572","DYS617","DYS568","DYS487","DYS640","DYS492"]
     d_group = ["DYR112","DYS518","DYS614","DYS626","DYS644","DYS684","DYS710","DYS485","DYS632","DYS495","DYS540","DYS714","DYS716","DYS717","DYS505","DYS556","DYS549","DYS589","DYS522","DYS494","DYS533","DYS636","DYS575","DYS638","DYS462","DYS452","DYS445","Y-GATA-A10","DYS463","DYS441","Y-GGAAT-1B07","DYS525","DYS712","DYS593","DYS650","DYS532","DYS715","DYS504","DYS513","DYS561","DYS552","DYS726","DYS635","DYS587","DYS643","DYS497","DYS510","DYS434","DYS461","DYS435"]
-
+    ftdna = {}
+    ftdna["12"] = ["DYS393","DYS390","DYS19","DYS391","DYS385","DYS426","DYS388","DYS439","DYS389I","DYS392","DYS389II"]
+    ftdna["25"] = ftdna["12"] + ["DYS458","DYS459","DYS455","DYS454","DYS447","DYS437","DYS448","DYS449","DYS464"]
+    ftdna["37"] = ftdna["25"] + ["DYS460","Y-GATA-H4","YCAII","DYS456","DYS607","DYS576","DYS570","CDY","DYS442","DYS438"]
+    ftdna["67"] = ftdna["37"] + ["DYS531","DYS578","DYF395","DYS590","DYS537","DYS641","DYS472","DYF406S1","DYS511","DYS425","DYS413","DYS557","DYS594","DYS436","DYS490","DYS534","DYS450","DYS444","DYS481","DYS520","DYS446","DYS617","DYS568","DYS487","DYS572","DYS640","DYS492","DYS565"]
+    ftdna["111"] = ftdna["67"] + ["DYS710","DYS485","DYS632","DYS495","DYS540","DYS714","DYS716","DYS717","DYS505","DYS556","DYS549","DYS589","DYS522","DYS494","DYS533","DYS636","DYS575","DYS638","DYS462","DYS452","DYS445","Y-GATA-A10","DYS463","DYS441","Y-GGAAT-1B07","DYS525","DYS712","DYS593","DYS650","DYS532","DYS715","DYS504","DYS513","DYS561","DYS552","DYS726","DYS635","DYS587","DYS643","DYS497","DYS510","DYS434","DYS461","DYS435"]
     strLabelsUsed = []    
     strs = []
     dubSTRs = []
     quadSTRs = []
-    
-    if "a" in modesIncluded:
-        strs = a_group
-        dubSTRs = ["DYS385","YCAII"]
-    if "b" in modesIncluded:
-        strs += b_group
-        dubSTRs += ["DYS459","CDY"]
-        quadSTRs.append("DYS464")
-    if "c" in modesIncluded:
-        strs += c_group
-        dubSTRs += ["DYF395", "DYS413"]
-    if "d" in modesIncluded:
-        strs += d_group
-    
+    if "ftdna_" in modesIncluded:
+        ftdnastrs = modesIncluded.replace("ftdna_","")
+        strs = ftdna[ftdnastrs]
+        allDubs = ["DYS385","YCAII","DYS459","CDY","DYF395","DYS413"]
+        allQuads = ["DYS464"]
+        for thestr in strs:
+            if thestr in allDubs:
+                dubSTRs += [thestr]
+            if thestr in allQuads:
+                quadSTRs += [thestr]
+    else:
+        if "a" in modesIncluded:
+            strs = a_group
+            dubSTRs = ["DYS385","YCAII"]
+        if "b" in modesIncluded:
+            strs += b_group
+            dubSTRs += ["DYS459","CDY"]
+            quadSTRs.append("DYS464")
+        if "c" in modesIncluded:
+            strs += c_group
+            dubSTRs += ["DYF395", "DYS413"]
+        if "d" in modesIncluded:
+            strs += d_group
+        
+                
     for toremove in dubSTRs + quadSTRs:
         strs.remove(toremove)
 
@@ -49,6 +65,7 @@ def getSTRLabelsFromSets(modesIncluded):
         strLabelsUsed.append(thestr + 'c')
         strLabelsUsed.append(thestr + 'd')
         strLabelsUsed.append(thestr + '-length')
+    print(modesIncluded, strs, dubSTRs, quadSTRs)
     return (strs, dubSTRs, quadSTRs)
     
 def downstream(clade, hierarchy):
@@ -500,14 +517,14 @@ def getValuesForPredictionFromAlleleArray(strmap, strs, dubSTRs, quadSTRs, perce
     missing = 0
     for STR in strs:
         if STR not in strmap or is_float(strmap[STR]) == False:
-            print('missing or not float', STR)
+            #print('missing or not float', STR)
             missing += 1
             thiskit.append(float(0))
         else:    
             thiskit.append(float(strmap[STR]))
     for STR in dubSTRs:
         if STR not in strmap:
-            print('missing', STR)
+            #print('missing', STR)
             missing += 1
             thiskit.append(float(0))
             thiskit.append(float(0))
@@ -527,7 +544,7 @@ def getValuesForPredictionFromAlleleArray(strmap, strs, dubSTRs, quadSTRs, perce
                 thiskit.append(float(sl))
     for STR in quadSTRs:
         if STR not in strmap:
-            print('missing', STR)
+            #print('missing', STR)
             missing += 1
             thiskit.append(float(0))
             thiskit.append(float(0))
@@ -551,12 +568,12 @@ def getValuesForPredictionFromAlleleArray(strmap, strs, dubSTRs, quadSTRs, perce
                 thiskit.append(float(sl))
     percentMissing = float(missing) / (len(strs) + len(dubSTRs) + len(quadSTRs))
     if percentMissing > percentMissingSTRThreshold:
-        print("percent missing STRs:", percentMissing, "above threshold", percentMissingSTRThreshold)
+        #print("percent missing STRs:", percentMissing, "above threshold", percentMissingSTRThreshold)
         return None
     return thiskit
             
 
-modeCombos = ["abcd","abc","ab","cd","a","b","c","d"]
+modeCombos = ["abcd","ftdna_111","abc","ftdna_67","ab","ftdna_37","cd","ftdna_25","a","ftdna_12","b","c","d"]
 
 def getModesPklFile(stem, modes):
     return stem + "_" + modes + ".pkl"
