@@ -10,9 +10,10 @@ REQUIREMENTS
 
 . Python 3.6 #Python dependencies
   . packages numpy, pandas, time, sys, sklearn, random, json, os, operator, shutil, pickle
-
+. htslib - http://www.htslib.org/download/ to make this on ubuntu also requires 'sudo apt-get install' of  zlib1g-dev, libbz2-dev and liblzma-dev
 . CSV file containing STR and SNP results where each line contains a single ID, MARKER, ALLELE
 . JSON file containing YFull tree
+. apache 2 server with php enabled 'sudo apt install libapache2-mod-php'
 
 INSTALLATION
 
@@ -24,6 +25,7 @@ sudo apt-get install python3-numpy
 
 pytabix is not part of python3 distribution libraries. So you'll need to install it using pip.
 
+sudo apt-get install python3-pip
 pip3 install --user pytabix  (will install only for --user but is ok because web-data won't need this package)
 
 CONFIG.txt
