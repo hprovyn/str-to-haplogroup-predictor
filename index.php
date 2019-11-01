@@ -39,11 +39,18 @@ Please always give a link to <a href="http://predict.yseq.net">this</a> original
 Enter STRs in one of two formats, then press ENTER:<br><br>
 <br>
 <form action="<?php echo htmlentities($_SERVER['PHP_SELF']); ?>" method="POST">
-<input type="radio" name="format" value="standard" checked> Standard Format: $STR1=$ALLELE1,$STR2=$ALLELE2, ... <b>OR</b> $STR1 $ALLELE1 $STR2 $ALLELE2 ... <br>
-<input type="radio" name="format" value="ftdna"> FTDNA Tab Separated Format (copy results table row): $ALLELE1 TAB $ALLELE2 TAB $ALLELE3... in default FTDNA order containing 12, 25, 37, 67 or 111 STR Alleles <br>
+<input type="radio" id="standard" name="format" value="standard" checked> Standard Format: $STR1=$ALLELE1,$STR2=$ALLELE2, ... <b>OR</b> $STR1 $ALLELE1 $STR2 $ALLELE2 ... <br>
+<input type="radio" id="ftdna" name="format" value="ftdna"> FTDNA Tab Separated Format (copy results table row): $ALLELE1 TAB $ALLELE2 TAB $ALLELE3... in default FTDNA order containing 12, 25, 37, 67 or 111 STR Alleles <br>
 
 <?php if(isset($_POST['input'])) { ?>
-        <input name=input type="text" value="<?php echo $_POST['input']; ?>" maxlength="1000" size="135"></input><?php
+        <input name=input type="text" value="<?php echo $_POST['input']; ?>" maxlength="1000" size="135"></input>
+        <script>
+            var format = "<?php echo $_POST['format'] ?>"
+            if (format == "ftdna") {
+                document.getElementById("ftdna").checked = true;
+            }
+        </script>
+        <?php
 } else { ?>
         <input name=input type="text" maxlength="1000" size="135"></input><?php
 } ?>
