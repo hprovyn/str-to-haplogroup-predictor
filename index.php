@@ -43,7 +43,7 @@ Enter STRs in one of two formats, then press ENTER:<br><br>
 <input type="radio" id="ftdna" name="format" value="ftdna"> FTDNA Tab Separated Format (copy results table row): $ALLELE1 TAB $ALLELE2 TAB $ALLELE3... in default FTDNA order containing 12, 25, 37, 67 or 111 STR Alleles <br>
 
 <?php if(isset($_POST['input'])) { ?>
-        <input name=input type="text" value="<?php echo $_POST['input']; ?>" maxlength="1000" size="135"></input>
+        <input name=input type="text" value="<?php echo $_POST['input']; ?>" maxlength="1500" size="135"></input>
         <script>
             var format = "<?php echo $_POST['format'] ?>"
             if (format == "ftdna") {
@@ -52,7 +52,7 @@ Enter STRs in one of two formats, then press ENTER:<br><br>
         </script>
         <?php
 } else { ?>
-        <input name=input type="text" maxlength="1000" size="135"></input><?php
+        <input name=input type="text" maxlength="1500" size="135"></input><?php
 } ?>
 </form>
 
