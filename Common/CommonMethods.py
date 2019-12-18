@@ -598,6 +598,7 @@ import os
 def exactlyMatchesAnyModeCombo(strmap, modeCombos):
     rejected = True
     modesIdx = 0
+    predstrs = None
     while rejected and modesIdx < len(modeCombos):
         modesIncluded = modeCombos[modesIdx]
         (strs, dubSTRs, quadSTRs) = getSTRLabelsFromSets(modesIncluded)
@@ -605,7 +606,7 @@ def exactlyMatchesAnyModeCombo(strmap, modeCombos):
             predstrs = getValuesForPredictionFromAlleleArray(strmap, strs, dubSTRs, quadSTRs, 0)
             if predstrs != None:
                 rejected = False
-        modesIdx += 1    
+        modesIdx += 1
     return (predstrs, modesIncluded)
     
 def predict(strAlleleString, panelHierarchy, policyFileStem, modelPickleFileStem, percentMissingSTRThreshold, haplogroupClassConfigPath):
