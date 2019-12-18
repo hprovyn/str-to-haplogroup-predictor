@@ -594,6 +594,19 @@ def getSTRmap(queryAlleleArray):
     return strmap
 
 import os
+
+def exactlyMatchesAnyModeCombo(strmap, modeCombos):
+    rejected = True
+    modesIdx = 0
+    while rejected and modesIdx < len(modeCombos):
+        modesIncluded = modeCombos[modesIdx]
+        (strs, dubSTRs, quadSTRs) = getSTRLabelsFromSets(modesIncluded)
+        if len(strs + dubSTRs + quadSTRs) == len(strmap.keys()):
+            predstrs = getValuesForPredictionFromAlleleArray(strmap, strs, dubSTRs, quadSTRs, 0)
+            if predstrs != None:
+                rejected = False
+        modesIdx += 1    
+    return (predstrs, modesIncluded)
     
 def predict(strAlleleString, panelHierarchy, policyFileStem, modelPickleFileStem, percentMissingSTRThreshold, haplogroupClassConfigPath):
     queryAlleleArray = strAlleleString.split(",")
@@ -603,18 +616,22 @@ def predict(strAlleleString, panelHierarchy, policyFileStem, modelPickleFileStem
         return validationMessage
     else:
         strmap = getSTRmap(queryAlleleArray)
-        rejected = True
-        modesIdx = 0
-        while rejected and modesIdx < len(modeCombos):
-            modesIncluded = modeCombos[modesIdx]
-            (strs, dubSTRs, quadSTRs) = getSTRLabelsFromSets(modesIncluded)
-            print(modesIncluded)
-            predstrs = getValuesForPredictionFromAlleleArray(strmap, strs, dubSTRs, quadSTRs, percentMissingSTRThreshold)
-            if predstrs != None:
-                rejected = False
-            modesIdx += 1
-        print(modesIncluded, strs, dubSTRs, quadSTRs)
-        return loadModelAndPredict(predstrs, panelHierarchy, modesIncluded, policyFileStem, modelPickleFileStem, haplogroupClassConfigPath)
+        (predstrs, modesIncluded) = exactlyMatchesAnyModeCombo(strmap, modeCombos)
+        if predstrs != None:
+            return loadModelAndPredict(predstrs, panelHierarchy, modesIncluded, policyFileStem, modelPickleFileStem, haplogroupClassConfigPath)
+        else:
+            rejected = True
+            modesIdx = 0
+            while rejected and modesIdx < len(modeCombos):
+                modesIncluded = modeCombos[modesIdx]
+                (strs, dubSTRs, quadSTRs) = getSTRLabelsFromSets(modesIncluded)
+                print(modesIncluded)
+                predstrs = getValuesForPredictionFromAlleleArray(strmap, strs, dubSTRs, quadSTRs, percentMissingSTRThreshold)
+                if predstrs != None:
+                    rejected = False
+                modesIdx += 1
+            print(modesIncluded, strs, dubSTRs, quadSTRs)
+            return loadModelAndPredict(predstrs, panelHierarchy, modesIncluded, policyFileStem, modelPickleFileStem, haplogroupClassConfigPath)
 
 import json
 
