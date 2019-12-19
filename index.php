@@ -37,8 +37,10 @@ Please always give a link to <a href="http://predict.yseq.net">this</a> original
 <div style="padding-right: 30px;padding-bottom: 50px;padding-left: 30px;text-align: left">
 <h1>Enter STR Alleles for Y-Haplogroup Prediction</h1><br>
 Enter STRs in one of two formats, then press ENTER.<br><br>
+Standard format recognizes the following STRs: DYS391, DYS389I, DYS437, DYS439, DYS389II, DYS438, DYS426, DYS393, YCAII, DYS390, DYS385, Y-GATA-H4, DYS388, DYS447, DYS19, DYS392, DYS458, DYS455, DYS454, DYS464, DYS448, DYS449, DYS456, DYS576, CDY, DYS460, DYS459, DYS570, DYS607, DYS442, DYS728, DYS723, DYS711, DYR76, DYR33, DYS727, DYR157, DYS713, DYS531, DYS578, DYF395, DYS590, DYS537, DYS641, DYS472, DYF406S1, DYS511, DYS557, DYS490, DYS446, DYS481, DYS413, DYS534, DYS450, DYS425, DYS594, DYS444, DYS520, DYS436, DYS565, DYS572, DYS617, DYS568, DYS487, DYS640, DYS492, DYR112, DYS518, DYS614, DYS626, DYS644, DYS684, DYS710, DYS485, DYS632, DYS495, DYS540, DYS714, DYS716, DYS717, DYS505, DYS556, DYS549, DYS589, DYS522, DYS494, DYS533, DYS636, DYS575, DYS638, DYS462, DYS452, DYS445, Y-GATA-A10, DYS463, DYS441, Y-GGAAT-1B07, DYS525, DYS712, DYS593, DYS650, DYS532, DYS715, DYS504, DYS513, DYS561, DYS552, DYS726, DYS635, DYS587, DYS643, DYS497, DYS510, DYS434, DYS461, DYS435<br><br>
 If you tested with FTDNA, you must check the "FTDNA Format" and copy-paste your STR results table row.<br>It will be tab separated like this: 12	 15	 10	 14-17	 11...<br>
-(Otherwise the necessary transformation of Y-GATA-H4 value to NIST format will not take place.)
+(Otherwise the necessary transformation of Y-GATA-H4 value to NIST format will not take place.)<br><br>
+In either case, use hyphens to separate palindromes, like 13-15-15-18
 <br><br>
 <form action="<?php echo htmlentities($_SERVER['PHP_SELF']); ?>" method="POST">
 <input type="radio" id="standard" name="format" value="standard" checked> Standard Format: $STR1=$ALLELE1,$STR2=$ALLELE2, ... <b>OR</b> $STR1 $ALLELE1 $STR2 $ALLELE2 ... <br>
