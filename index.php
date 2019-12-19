@@ -36,11 +36,13 @@ Please always give a link to <a href="http://predict.yseq.net">this</a> original
 <br>
 <div style="padding-right: 30px;padding-bottom: 50px;padding-left: 30px;text-align: left">
 <h1>Enter STR Alleles for Y-Haplogroup Prediction</h1><br>
-Enter STRs in one of two formats, then press ENTER:<br><br>
-<br>
+Enter STRs in one of two formats, then press ENTER.<br><br>
+If you tested with FTDNA, you must check the "FTDNA Format" and copy-paste your STR results table row.<br>It will be tab separated like this: 12	 15	 10	 14-17	 11...<br>
+(Otherwise the necessary transformation of Y-GATA-H4 value to NIST format will not take place.)
+<br><br>
 <form action="<?php echo htmlentities($_SERVER['PHP_SELF']); ?>" method="POST">
 <input type="radio" id="standard" name="format" value="standard" checked> Standard Format: $STR1=$ALLELE1,$STR2=$ALLELE2, ... <b>OR</b> $STR1 $ALLELE1 $STR2 $ALLELE2 ... <br>
-<input type="radio" id="ftdna" name="format" value="ftdna"> FTDNA Tab Separated Format (copy results table row): $ALLELE1 TAB $ALLELE2 TAB $ALLELE3... in default FTDNA order containing 12, 25, 37, 67 or 111 STR Alleles <br>
+<input type="radio" id="ftdna" name="format" value="ftdna"> FTDNA Tab Separated Format: $ALLELE1 TAB $ALLELE2 TAB $ALLELE3... in default FTDNA order containing 12, 25, 37, 67 or 111 STR Alleles <br>
 
 <?php if(isset($_POST['input'])) { ?>
         <input name=input type="text" value="<?php echo $_POST['input']; ?>" maxlength="1500" size="135"></input>
