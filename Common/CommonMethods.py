@@ -506,10 +506,11 @@ def validateSTRQuery(strarray):
         if len(thesplit) == 1:
             return "STR query format error: '" + thestr + "' needs to be in format $ALLELE=$VALUE"
         for split in thesplit[1].split("-"):
-            try:
-                float(split)
-            except ValueError:
-                return "STR query format error: '" + thestr + "', allele value '" + split + "' not a float"
+            if thesplit[0] != "DYF399X":
+                try:
+                    float(split)
+                except ValueError:
+                    return "STR query format error: '" + thestr + "', allele value '" + split + "' not a float"
     return None
     
 def getValuesForPredictionFromAlleleArray(strmap, strs, dubSTRs, quadSTRs, percentMissingSTRThreshold):
