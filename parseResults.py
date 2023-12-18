@@ -12,7 +12,7 @@ def readResultsFile(fil):
             splitLine = line.split(",")
             theid = splitLine[0]
             marker = splitLine[1]
-            allele = splitLine[2]
+            allele = splitLine[2].replace("\n","")
             #print(theid, marker, allele)
             if theid not in theKits.keys():
                 theKits[theid] = {"str": {}, "pos":[], "neg":[]}

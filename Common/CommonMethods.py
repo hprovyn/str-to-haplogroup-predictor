@@ -609,7 +609,7 @@ def exactlyMatchesAnyModeCombo(strmap, modeCombos):
         modesIdx += 1
     return (predstrs, modesIncluded)
     
-def predict(strAlleleString, panelHierarchy, policyFileStem, modelPickleFileStem, percentMissingSTRThreshold, haplogroupClassConfigPath):
+def predict(strAlleleString, panelHierarchy, policyFileStem, modelPickleFileStem, percentMissingSTRThreshold, haplogroupClassConfigPath, outputVersion = "normal"):
     queryAlleleArray = strAlleleString.split(",")
     validationMessage = validateSTRQuery(queryAlleleArray)
     if validationMessage != None:
@@ -619,7 +619,7 @@ def predict(strAlleleString, panelHierarchy, policyFileStem, modelPickleFileStem
         strmap = getSTRmap(queryAlleleArray)
         (predstrs, modesIncluded) = exactlyMatchesAnyModeCombo(strmap, modeCombos)
         if predstrs != None:
-            return loadModelAndPredict(predstrs, panelHierarchy, modesIncluded, policyFileStem, modelPickleFileStem, haplogroupClassConfigPath)
+            return loadModelAndPredict(predstrs, panelHierarchy, modesIncluded, policyFileStem, modelPickleFileStem, haplogroupClassConfigPath, outputVersion)
         else:
             rejected = True
             modesIdx = 0
@@ -632,15 +632,16 @@ def predict(strAlleleString, panelHierarchy, policyFileStem, modelPickleFileStem
                     rejected = False
                 modesIdx += 1
             print(modesIncluded, strs, dubSTRs, quadSTRs)
-            return loadModelAndPredict(predstrs, panelHierarchy, modesIncluded, policyFileStem, modelPickleFileStem, haplogroupClassConfigPath)
+            return loadModelAndPredict(predstrs, panelHierarchy, modesIncluded, policyFileStem, modelPickleFileStem, haplogroupClassConfigPath, outputVersion)
 
 import json
 
 def getPredictedHTML(key, haplogroupClassConfigPath):
     thejson = json.load(open(haplogroupClassConfigPath))
+#    return thejson[key]["html"]
     return thejson[key]["html"] + '<br><br><img src="migration.jpg" height="50" width="50">&nbsp;' + '<a href="' + thejson[key]["migration"] + '" target="_blank">View Migration</a>&nbsp;Computed by PhyloGeographer from YFull and ancient samples'
     
-def loadModelAndPredict(predstrs, panelHierarchy, modesIncluded, policyFileStem, modelPickleFileStem, haplogroupClassConfigPath):
+def loadModelAndPredict(predstrs, panelHierarchy, modesIncluded, policyFileStem, modelPickleFileStem, haplogroupClassConfigPath, outputVersion = "normal"):
     if predstrs == None:
         print("Rejected, not enough STRs in sample to predict")
         return "Rejected, not enough STRs in sample to predict"
@@ -682,7 +683,10 @@ def loadModelAndPredict(predstrs, panelHierarchy, modesIncluded, policyFileStem,
         predprobaclass.sort(key=sortPredProba)
         predprobaclass.reverse()
         print(predprobaclass)
-        print(getPredictedHTML(refined[0], haplogroupClassConfigPath) + "<br><br>" + createHTML(refined, predprobaclass, readRawPredConfidence(getRawPredConfFile(policyFileStem, modesIncluded))) + "<b>Model Information</b>" + getSpecificModelMetadata(modelPickleFileStem, modesIncluded))
+        if outputVersion == "mini":
+            print(createHTML(refined, predprobaclass, readRawPredConfidence(getRawPredConfFile(policyFileStem, modesIncluded))) )
+        else:
+            print(getPredictedHTML(refined[0], haplogroupClassConfigPath) + "<br><br>" + createHTML(refined, predprobaclass, readRawPredConfidence(getRawPredConfFile(policyFileStem, modesIncluded))) + "<b>Model Information</b>" + getSpecificModelMetadata(modelPickleFileStem, modesIncluded))
         return refined[0]
 
 def createHTML(refined, predprobaclass, rawPredConfidence):
